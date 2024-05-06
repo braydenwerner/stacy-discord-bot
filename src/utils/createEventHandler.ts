@@ -12,7 +12,7 @@ export function createEventHandler(client: Client) {
 
     const eventName = folder.replace(/\\/g, "/").split("/").pop() as string;
 
-    client.on(eventName, async (arg: string) => {
+    client.on(eventName, async (arg: any) => {
       for (const file of eventFiles) {
         const eventFunction = (await import(file)).default;
         await eventFunction(client, arg);

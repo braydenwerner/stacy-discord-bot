@@ -9,16 +9,12 @@ export async function createCommandHandler(client: CustomClient) {
     true,
   );
 
-  console.log(commandFolders);
-
   for (const folder of commandFolders) {
     const commandFiles = getAllFiles(folder);
     commandFiles.sort();
 
     for (const file of commandFiles) {
-      console.log(file);
       const command = (await import(file)).default;
-      console.log(command);
       // Set a new item in the Collection with the key as the command name and the value as the exported module
       if ("data" in command && "execute" in command) {
         client.commands.set(command.data.name, command);

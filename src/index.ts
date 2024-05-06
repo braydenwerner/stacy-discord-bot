@@ -5,7 +5,11 @@ import { Client, Collection, GatewayIntentBits } from "discord.js";
 export type CustomClient = Client & { commands: Collection<string, any> };
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds],
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMessages,
+  ],
 }) as CustomClient;
 client.commands = new Collection();
 

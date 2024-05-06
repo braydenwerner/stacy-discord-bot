@@ -7,16 +7,6 @@ const config = {
   semi: true,
   trailingComma: "all",
   tabWidth: 2,
-  // importOrder: [
-  //   "<THIRD_PARTY_MODULES>", // Imports not matched by other special words or groups.
-  //   "",
-  //   "^@/utils/(.*)$",
-  //   "^@/events/(.*)$",
-  //   "^@/commands/(.*)$",
-  //   "^@/types/(.*)$",
-  //   "^@/(.*)$",
-  //   "^[./]",
-  // ],
   plugins: ["@ianvs/prettier-plugin-sort-imports"],
   importOrder: [
     "<THIRD_PARTY_MODULES>",

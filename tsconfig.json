@@ -24,5 +24,15 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noPropertyAccessFromIndexSignature": true,
+
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@utils/*": ["./src/utils/*"],
+      "@events/*": ["./src/events/*"],
+      "@commands/*": ["./src/commands/*"],
+      "@types/*": ["./src/types/*"],
+    },
+    "typeRoots": ["./src/types", "./node_modules/@types"],
   },
 }

@@ -1,14 +1,18 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { createCommandHandler } from "@/utils/createCommandHandler";
+import { createEventHandler } from "@/utils/createEventHandler";
+import { Client, Collection, GatewayIntentBits } from "discord.js";
 
-import { createEventHandler } from "@utils/createEventHandler";
+export type CustomClient = Client & { commands: Collection<string, any> };
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
-});
+}) as CustomClient;
+client.commands = new Collection();
 
 (async () => {
   try {
     createEventHandler(client);
+    createCommandHandler(client);
 
     client.login(Bun.env.TOKEN);
   } catch (error) {

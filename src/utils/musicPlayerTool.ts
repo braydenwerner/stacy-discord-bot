@@ -34,23 +34,31 @@ export const musicPlayerTool = new DynamicStructuredTool({
     // const songQueue = player.queues.create(message.guild);
     // if (!songQueue.connection) await songQueue.connect(voiceChannel);
 
-    const result = await player.play(
-      voiceChannel,
-      `${songName} ${artist ? `by ${artist}` : ""}`,
-      {
-        nodeOptions: {
-          metadata: message.interaction,
+    try {
+      const result = await player.play(
+        voiceChannel,
+        `${songName} ${artist ? `by ${artist}` : ""}`,
+        {
+          nodeOptions: {
+            metadata: message.interaction,
+          },
         },
-      },
-    );
-    // The logs below look fine
-    console.log(result.track.author);
+      );
+      // The logs below look fine
+      console.log(result.track.author);
 
-    if (result === null || !result.track) {
-      throw new Error("Failed to play song.");
+      if (result === null || !result.track) {
+        throw new Error("Failed to play song.");
+      }
+
+      message.reply(
+        `Now playing: ${songName} by ${artist ?? "unknown artist"}`,
+      );
+    } catch (error) {
+      console.error(`Error: ${error}`);
+      message.reply("Failed to play song.");
+      return "";
     }
-
-    message.reply(`Now playing: ${songName} by ${artist ?? "unknown artist"}`);
 
     return "";
   },

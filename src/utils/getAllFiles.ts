@@ -1,5 +1,5 @@
-import fs from "fs"
-import path from "path"
+import fs from "fs";
+import path from "path";
 
 export function getAllFiles(directory: string, foldersOnly = false) {
   let fileNames = [];
@@ -21,4 +21,4 @@ export function getAllFiles(directory: string, foldersOnly = false) {
   }
 
   return fileNames;
-};
+}

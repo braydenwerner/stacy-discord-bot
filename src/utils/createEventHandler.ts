@@ -4,19 +4,19 @@ import { type Client } from "discord.js";
 import { getAllFiles } from "@utils/getAllFiles";
 
 export function createEventHandler(client: Client) {
-  const eventFolders = getAllFiles(path.join(__dirname, "..", "events"), true);
+  const eventFiles = getAllFiles(path.join(__dirname, "..", "events"), false);
+  eventFiles.sort();
 
-  for (const folder of eventFolders) {
-    const eventFiles = getAllFiles(folder);
-    eventFiles.sort();
-
-    const eventName = folder.replace(/\\/g, "/").split("/").pop() as string;
+  for (const file of eventFiles) {
+    const eventName = file
+      .replace(/\\/g, "/")
+      .split("/")
+      .pop()
+      ?.split(".")[0] as string;
 
     client.on(eventName, async (arg: any) => {
-      for (const file of eventFiles) {
-        const eventFunction = (await import(file)).default;
-        await eventFunction(client, arg);
-      }
+      const eventFunction = (await import(file)).default;
+      await eventFunction(client, arg);
     });
   }
 }

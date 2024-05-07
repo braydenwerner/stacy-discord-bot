@@ -7,7 +7,10 @@ import type { Message } from "discord.js";
 
 const llmWithTools = llm.bindTools([musicPlayerTool]);
 
-export default async function messageCreate(_: CustomClient, message: Message) {
+export default async function messageCreate(
+  client: CustomClient,
+  message: Message,
+) {
   if (message.author.bot) return;
 
   // Determine whether or not to invoke a tool
@@ -27,8 +30,11 @@ export default async function messageCreate(_: CustomClient, message: Message) {
     // If there is a tool to invoke, do so
     for (const toolCall of res.tool_calls ?? []) {
       if (toolCall.name === MUSIC_PLAYER) {
-        const output = await musicPlayerTool.invoke(toolCall.args);
-        message.reply(output);
+        await musicPlayerTool.invoke({
+          ...toolCall.args,
+          client,
+          message,
+        });
       }
     }
   }

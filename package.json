@@ -1,10 +1,12 @@
 {
   "name": "stacy-discord-bot",
-  "module": "index.ts",
+  "version": "1.0.0",
+  "main": "dist/index.ts",
   "type": "module",
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
-    "@types/bun": "latest"
+    "@types/node": "^20.12.10",
+    "tsx": "^4.9.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -12,20 +14,19 @@
   "dependencies": {
     "@discord-player/extractor": "^4.4.7",
     "@discordjs/builders": "^1.8.1",
-    "@discordjs/opus": "^0.9.0",
-    "@discordjs/rest": "^2.3.0",
-    "@discordjs/voice": "^0.17.0",
-    "discord-player": "^6.6.7",
-    "discord-voip": "^0.1.3",
+    "discord-player": "^6.6.8",
     "discord.js": "^14.15.2",
+    "dotenv": "^16.4.5",
     "ffmpeg-static": "^5.2.0",
     "langchain": "^0.1.36",
     "mediaplex": "^0.0.9",
-    "ytdl-core": "^4.11.5",
+    "prettier": "3",
+    "youtube-ext": "^1.1.25",
     "zod": "^3.23.6"
   },
   "scripts": {
-    "start": "bun run src/index.ts",
-    "dev": "bun --watch src/index.ts"
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
   }
 }

@@ -1,4 +1,5 @@
 import path from "path";
+import { __dirname } from "@/constants/constants";
 import type { CustomClient } from "@/index";
 
 import { getAllFiles } from "./getAllFiles";

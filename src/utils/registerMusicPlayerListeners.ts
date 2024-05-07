@@ -155,7 +155,7 @@ export function registerMusicPlayerListeners(player: Player) {
     });
   });
 
-  if (Bun.env.DEBUG_ENABLED === "true") {
+  if (process.env.DEBUG_ENABLED === "true") {
     player.events.on("debug", async (_, message) => {
       // Emitted when the player queue sends debug info
       // Useful for seeing what state the current queue is at

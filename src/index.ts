@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/registerMusicPlayerListeners";
@@ -18,23 +20,24 @@ const client = new Client({
 }) as CustomClient;
 client.commands = new Collection();
 
-const player = new Player(client, {
-  ytdlOptions: {
-    quality: "highestaudio",
-    highWaterMark: 1 << 25,
-  },
-});
+// const player = new Player(client, {
+//   ytdlOptions: {
+//     quality: "highestaudio",
+//     highWaterMark: 1 << 25,
+//   },
+// });
+const player = new Player(client);
 // await player.extractors.loadDefault((ext) => ext !== "YouTubeExtractor");
-await player.extractors.loadDefault();
-
-registerMusicPlayerListeners(player);
 
 (async () => {
   try {
+    await player.extractors.loadDefault();
+
+    registerMusicPlayerListeners(player);
     createEventHandler(client);
     createCommandHandler(client);
 
-    client.login(Bun.env.TOKEN);
+    client.login(process.env.TOKEN);
   } catch (error) {
     console.log(`Error: ${error}`);
   }

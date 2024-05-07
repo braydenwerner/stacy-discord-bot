@@ -1,5 +1,4 @@
 import { type CustomClient } from "@/index";
-import { EmbedBuilder } from "@discordjs/builders";
 import { useMainPlayer } from "discord-player";
 import { Message } from "discord.js";
 import { DynamicStructuredTool } from "langchain/tools";
@@ -32,9 +31,6 @@ export const musicPlayerTool = new DynamicStructuredTool({
     if (!message.guild) throw new Error("No guild found.");
     if (!message.member.user) throw new Error("No interaction found.");
 
-    // const songQueue = player.queues.create(message.guild);
-    // if (!songQueue.connection) await songQueue.connect(voiceChannel);
-
     try {
       const query = `${songName} ${artist ? `by ${artist}` : ""}`;
       const searchResult = await player.search(url ?? query, {
@@ -51,11 +47,11 @@ export const musicPlayerTool = new DynamicStructuredTool({
 
       const result = await player.play(voiceChannel, searchResult, {
         nodeOptions: {
-          leaveOnEnd: true,
           metadata: {
-            channel: message.channel,
-            member: message.member,
-            timestamp: new Date(),
+            message,
+            // channel: message.channel,
+            // member: message.member,
+            // timestamp: new Date(),
           },
         },
       });

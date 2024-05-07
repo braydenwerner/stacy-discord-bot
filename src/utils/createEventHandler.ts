@@ -1,4 +1,5 @@
-import path from "path";
+import path, { dirname } from "path";
+import { __dirname } from "@/constants/constants";
 import { type Client } from "discord.js";
 
 import { getAllFiles } from "@utils/getAllFiles";

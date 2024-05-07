@@ -1,5 +1,6 @@
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
+import { registerMusicPlayerListeners } from "@/utils/registerMusicPlayerListeners";
 import { Player } from "discord-player";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 
@@ -26,24 +27,7 @@ const player = new Player(client, {
 // await player.extractors.loadDefault((ext) => ext !== "YouTubeExtractor");
 await player.extractors.loadDefault();
 
-player.events.on("playerStart", (queue, track) => {
-  // we will later define queue.metadata object while creating the queue
-  console.log("playerStart reacahed");
-  console.log(track.views);
-  // queue.metadata.channel.send(`Started playing **${track.title}**!`);
-});
-
-player.events.on("debug", (guild, msg) => {
-  console.log("Debug:", msg);
-});
-
-player.events.on("error", (guild, msg) => {
-  console.log("Error:", msg);
-});
-
-player.events.on("playerError", (guild, msg) => {
-  console.log("playerError:", msg);
-});
+registerMusicPlayerListeners(player);
 
 (async () => {
   try {

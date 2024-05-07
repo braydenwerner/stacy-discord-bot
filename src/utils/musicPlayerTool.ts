@@ -19,7 +19,7 @@ export const musicPlayerTool = new DynamicStructuredTool({
   name: MUSIC_PLAYER,
   description: "Can play music.",
   schema: playMusicSchema,
-  func: async ({ songName, artist, client, message }) => {
+  func: async ({ songName, artist, url, client, message }) => {
     const player = useMainPlayer();
 
     const voiceChannel = message.member?.voice.channel;
@@ -30,20 +30,35 @@ export const musicPlayerTool = new DynamicStructuredTool({
       return "";
     }
     if (!message.guild) throw new Error("No guild found.");
+    if (!message.member.user) throw new Error("No interaction found.");
 
     // const songQueue = player.queues.create(message.guild);
     // if (!songQueue.connection) await songQueue.connect(voiceChannel);
 
     try {
-      const result = await player.play(
-        voiceChannel,
-        `${songName} ${artist ? `by ${artist}` : ""}`,
-        {
-          nodeOptions: {
-            metadata: message.interaction,
+      const query = `${songName} ${artist ? `by ${artist}` : ""}`;
+      const searchResult = await player.search(url ?? query, {
+        requestedBy: message.member.user,
+      });
+
+      console.log(searchResult);
+
+      if (!searchResult?.hasTracks()) {
+        console.error("No tracks found.");
+        message.reply("No tracks found.");
+        return "";
+      }
+
+      const result = await player.play(voiceChannel, searchResult, {
+        nodeOptions: {
+          leaveOnEnd: true,
+          metadata: {
+            channel: message.channel,
+            member: message.member,
+            timestamp: new Date(),
           },
         },
-      );
+      });
       // The logs below look fine
       console.log(result.track.author);
 
@@ -57,7 +72,6 @@ export const musicPlayerTool = new DynamicStructuredTool({
     } catch (error) {
       console.error(`Error: ${error}`);
       message.reply("Failed to play song.");
-      return "";
     }
 
     return "";

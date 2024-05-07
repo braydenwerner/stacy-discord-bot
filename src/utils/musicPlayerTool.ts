@@ -32,9 +32,6 @@ export const musicPlayerTool = new DynamicStructuredTool({
     if (!message.guild) throw new Error("No guild found.");
     if (!message.member.user) throw new Error("No interaction found.");
 
-    // const songQueue = player.queues.create(message.guild);
-    // if (!songQueue.connection) await songQueue.connect(voiceChannel);
-
     try {
       const query = `${songName} ${artist ? `by ${artist}` : ""}`;
       const searchResult = await player.search(url ?? query, {

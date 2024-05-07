@@ -11,7 +11,8 @@ export default async function messageCreate(
   client: CustomClient,
   message: Message,
 ) {
-  if (message.author.bot) return;
+  if (message.author.bot || !message.content?.toUpperCase().includes("STACY"))
+    return;
 
   // Determine whether or not to invoke a tool
   const res = await llmWithTools.invoke(message.content);

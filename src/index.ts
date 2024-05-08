@@ -2,7 +2,7 @@ import "dotenv/config";
 
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
-import { registerMusicPlayerListeners } from "@/utils/registerMusicPlayerListeners";
+import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";
 import { Player } from "discord-player";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 

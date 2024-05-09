@@ -8,6 +8,7 @@ const EMBED_DESCRIPTION_MAX_LENGTH = 2048;
 export function registerMusicPlayerListeners(player: Player) {
   // this event is emitted whenever discord-player starts to play a track
   player.events.on("playerStart", (queue, track) => {
+    if (queue.metadata.disableEmbeds) return;
     queue.metadata.channel.send({
       embeds: [
         new EmbedBuilder({
@@ -24,6 +25,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("error", (queue, error) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the player encounters an error
     queue.metadata.channel.send({
       embeds: [
@@ -41,6 +43,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("audioTrackAdd", (queue, track) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the player adds a single song to its queue
     queue.metadata.channel.send({
       embeds: [
@@ -54,6 +57,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("audioTracksAdd", (queue, tracks) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the player adds multiple songs to its queue
     queue.metadata.channel.send({
       embeds: [
@@ -67,6 +71,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("audioTrackRemove", (queue, track) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the player adds multiple songs to its queue
     queue.metadata.channel.send({
       embeds: [
@@ -80,6 +85,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("audioTracksRemove", (queue, tracks) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the player adds multiple songs to its queue
     queue.metadata.channel.send({
       embeds: [
@@ -93,6 +99,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("playerSkip", (queue, track) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the audio player fails to load the stream for a song
     queue.metadata.channel.send({
       embeds: [
@@ -106,6 +113,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("disconnect", (queue) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the bot leaves the voice channel
     queue.metadata.channel.send({
       embeds: [
@@ -143,6 +151,7 @@ export function registerMusicPlayerListeners(player: Player) {
   // });
 
   player.events.on("emptyQueue", (queue) => {
+    if (queue.metadata.disableEmbeds) return;
     // Emitted when the player queue has finished
     queue.metadata.channel.send({
       embeds: [

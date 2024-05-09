@@ -11,6 +11,7 @@ specifiers:
   discord.js: ^14.15.2
   dotenv: ^16.4.5
   langchain: ^0.1.36
+  libsodium-wrappers: ^0.7.13
   mediaplex: ^0.0.9
   prettier: '3'
   tsx: ^4.9.3
@@ -25,6 +26,7 @@ dependencies:
   discord.js: 14.15.2
   dotenv: 16.4.5
   langchain: 0.1.36_discord.js@14.15.2
+  libsodium-wrappers: 0.7.13
   mediaplex: 0.0.9
   prettier: 3.2.5
   zod: 3.23.7

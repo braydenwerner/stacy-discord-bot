@@ -5,7 +5,7 @@ import { EmbedBuilder, Message } from "discord.js";
 import { DynamicStructuredTool } from "langchain/tools";
 import { z } from "zod";
 
-import { queueEmbedResponse } from "./musicUtil";
+import { queueEmbedResponse } from "../utils/music/musicUtil";
 
 const lyricsExtractor = lyricsExtractorSuper();
 
@@ -80,9 +80,10 @@ export const pauseOrResumeSongTool = new DynamicStructuredTool({
 
       const guildPlayerNode = usePlayer(message.guild.id);
       if (!guildPlayerNode) throw new Error("No player node found.");
+
       const newPauseState = !guildPlayerNode.isPaused();
-      console.log("newPauseState", newPauseState);
       guildPlayerNode.setPaused(newPauseState);
+
       await message.reply(
         `${emojis.success} ${message.member}, ${newPauseState ? "paused" : "resumed"} playback`,
       );

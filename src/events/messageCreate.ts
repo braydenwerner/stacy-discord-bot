@@ -8,7 +8,6 @@ import {
   skipSongTool,
   viewSongQueueTool,
 } from "@/tools/musicPlayerTools";
-import { comeSayHelloTool } from "@/tools/voiceTools";
 import { config, llm, withHistory } from "@/utils/useMessageHistory";
 import { type Message } from "discord.js";
 
@@ -18,7 +17,6 @@ const tools = {
   [skipSongTool.name]: skipSongTool,
   [viewSongQueueTool.name]: viewSongQueueTool,
   [lyricsTool.name]: lyricsTool,
-  [comeSayHelloTool.name]: comeSayHelloTool,
 };
 
 const llmWithTools = llm.bindTools(Object.values(tools));
@@ -60,9 +58,9 @@ export default async function messageCreate(
   } else {
     // If there is a tool to invoke, do so
     for (const toolCall of res.tool_calls ?? []) {
+      console.log({ ...toolCall.args, message });
       await tools[toolCall.name].invoke({
         ...toolCall.args,
-        client,
         message,
       });
     }

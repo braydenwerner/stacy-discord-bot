@@ -1,6 +1,6 @@
 import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
 import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
-import { useMainPlayer, usePlayer, useQueue } from "discord-player";
+import { QueryType, useMainPlayer, usePlayer, useQueue } from "discord-player";
 import { EmbedBuilder, Message } from "discord.js";
 import { DynamicStructuredTool } from "langchain/tools";
 import { z } from "zod";
@@ -10,7 +10,7 @@ import { queueEmbedResponse } from "../utils/music/musicUtil";
 const lyricsExtractor = lyricsExtractorSuper();
 
 const playMusicSchema = z.object({
-  songName: z.string().describe("The name of the song to play."),
+  songName: z.string().optional().describe("The name of the song to play."),
   artist: z.string().optional().describe("The artist of the song."),
   url: z.string().optional().describe("The URL of the song."),
   message: z.custom<Message>(),
@@ -32,15 +32,11 @@ export const playSongTool = new DynamicStructuredTool({
 
       const query = `${songName} ${artist ? `by ${artist}` : ""}`;
       const searchResult = await player.search(url ?? query, {
+        // searchEngine: "YOUTUBE_SEARCH",
         requestedBy: message.member.user,
       });
 
-      if (!searchResult?.hasTracks()) {
-        message.reply("No tracks found.");
-        return "";
-      }
-
-      const { track } = await player.play(voiceChannel, query, {
+      const { track } = await player.play(voiceChannel, searchResult, {
         nodeOptions: {
           metadata: {
             // this is important for the event listeners

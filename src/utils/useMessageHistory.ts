@@ -13,7 +13,10 @@ export const llm = new ChatOpenAI({
 });
 
 export const prompt = ChatPromptTemplate.fromMessages([
-  ["system", "You are a helpful assistant named Stacy. answer:"],
+  [
+    "system",
+    "You are a helpful assistant named Stacy. Act sassy and flirty. answer:",
+  ],
   new MessagesPlaceholder("history"),
   ["human", "{input}"],
 ]);

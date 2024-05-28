@@ -1,11 +1,12 @@
 {
   "name": "stacy-discord-bot",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "dist/index.js",
   "type": "module",
   "devDependencies": {
     "@ianvs/prettier-plugin-sort-imports": "^4.2.1",
     "@types/node": "^20.12.10",
+    "tsc-alias": "^1.8.10",
     "tsx": "^4.9.3"
   },
   "peerDependencies": {
@@ -27,7 +28,7 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
     "start": "node dist/index.js",
     "deployCommands": "tsx src/scripts/deployCommands.ts"
   }

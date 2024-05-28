@@ -7,6 +7,7 @@ specifiers:
   '@distube/ytdl-core': ^4.13.3
   '@ianvs/prettier-plugin-sort-imports': ^4.2.1
   '@types/node': ^20.12.10
+  '@web-scrobbler/metadata-filter': ^3.1.0
   discord-player: ^6.6.8
   discord.js: ^14.15.2
   dotenv: ^16.4.5
@@ -23,6 +24,7 @@ dependencies:
   '@discordjs/builders': 1.8.1
   '@discordjs/voice': 0.17.0
   '@distube/ytdl-core': 4.13.3
+  '@web-scrobbler/metadata-filter': 3.1.0
   discord-player: 6.6.8_t4bpf4s6kjg67wcpmsqjrsaxuy
   discord.js: 14.15.2
   dotenv: 16.4.5
@@ -1089,6 +1091,11 @@ packages:
   /@vladfrangu/async_event_emitter/2.2.4:
     resolution: {integrity: sha512-ButUPz9E9cXMLgvAW8aLAKKJJsPu1dY1/l/E8xzLFuysowXygs6GBcyunK9rnGC4zTsnIc2mQo71rGw9U+Ykug==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+    dev: false
+
+  /@web-scrobbler/metadata-filter/3.1.0:
+    resolution: {integrity: sha512-3VLxdrcfRZ/jac7VV3v5s3R+HUQ/o4gp8vqZoojGhrvyrYyrjsyuJGaoSiFLoYmwYNAjeqJ/tnvIeJt8DSi4sg==}
+    engines: {node: '>=10.0.0'}
     dev: false
 
   /abort-controller/3.0.0:

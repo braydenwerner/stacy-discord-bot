@@ -4,7 +4,7 @@ version: 0.2
 phases:
   install:
     runtime-versions:
-      nodejs: 12
+      nodejs: 18
   pre_build:
     commands:
       - echo Installing source NPM dependencies...
@@ -13,6 +13,7 @@ phases:
       - echo Build started on `date`
       - echo Compiling the Node.js code
       - npm install
+      - npm install typescript -g
       - npm run build
   post_build:
     commands:

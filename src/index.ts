@@ -7,6 +7,7 @@ import { Player } from "discord-player";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 import express from "express"
 
+console.log("token: ", process.env.TOKEN)
 
 export type CustomClient = Client & {
   commands: Collection<string, any>;
@@ -39,7 +40,6 @@ const player = new Player(client);
     createEventHandler(client);
     createCommandHandler(client);
 
-    console.log("token: ", process.env.TOKEN)
     client.login(process.env.TOKEN);
   } catch (error) {
     console.log(`Error: ${error}`);

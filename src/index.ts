@@ -39,6 +39,7 @@ const player = new Player(client);
     createEventHandler(client);
     createCommandHandler(client);
 
+    console.log("token: ", process.env.TOKEN)
     client.login(process.env.TOKEN);
   } catch (error) {
     console.log(`Error: ${error}`);

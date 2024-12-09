@@ -1,6 +1,9 @@
 # Use Node.js LTS (Long Term Support) version with Alpine Linux
 FROM node:20-alpine
 
+# Install FFmpeg
+RUN apt-get update && apt-get install -y ffmpeg && apt-get clean
+
 # Set working directory in container
 WORKDIR /app
 

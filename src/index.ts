@@ -5,6 +5,8 @@ import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";
 import { Player } from "discord-player";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
+import express from "express"
+
 
 export type CustomClient = Client & {
   commands: Collection<string, any>;
@@ -42,3 +44,11 @@ const player = new Player(client);
     console.log(`Error: ${error}`);
   }
 })();
+
+// Google Cloud Health Check
+const port = process.env.PORT || 8080;
+const app = express()
+app.listen(port, () => {
+  console.log('Listening on port: ', port);
+});
+

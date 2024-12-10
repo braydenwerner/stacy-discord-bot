@@ -1,10 +1,14 @@
-import { ChatOpenAI } from "langchain/chat_models/openai";
-import { ChatMessageHistory } from "langchain/memory";
-import { ChatPromptTemplate, MessagesPlaceholder } from "langchain/prompts";
+import { BaseChatMessageHistory } from "@langchain/core/dist/chat_history";
 import {
+  ChatPromptTemplate,
+  MessagesPlaceholder,
+} from "@langchain/core/prompts";
+import {
+  RunnableConfig,
   RunnableWithMessageHistory,
-  type RunnableConfig,
-} from "langchain/runnables";
+} from "@langchain/core/runnables";
+import { ChatOpenAI } from "@langchain/openai";
+import { ChatMessageHistory } from "langchain/memory";
 
 export const llm = new ChatOpenAI({
   modelName: "gpt-3.5-turbo",
@@ -26,7 +30,9 @@ const messageHistory = new ChatMessageHistory();
 export const withHistory = new RunnableWithMessageHistory({
   runnable,
   // Optionally, you can use a function which tracks history by session ID.
-  getMessageHistory: (_sessionId: string) => messageHistory,
+  getMessageHistory: async (_sessionId: string) => {
+    return messageHistory as unknown as BaseChatMessageHistory;
+  },
   inputMessagesKey: "input",
   historyMessagesKey: "history",
 });

@@ -18,7 +18,7 @@ const playMusicSchema = z.object({
 
 export const playSongTool = new DynamicStructuredTool({
   name: "playSong",
-  description: "Plays a song.",
+  description: "Plays a song. ONLY PROVIDE A URL IF GIVEN.",
   schema: playMusicSchema,
   func: async ({ songName, artist, url, message }) => {
     try {
@@ -31,10 +31,12 @@ export const playSongTool = new DynamicStructuredTool({
       }
 
       const query = `${songName} ${artist ? `by ${artist}` : ""}`;
-      const searchResult = await player.search(url ?? query, {
+      console.log("query: ", url || query);
+      const searchResult = await player.search(url || query, {
         // searchEngine: "YOUTUBE_SEARCH",
         requestedBy: message.member.user,
       });
+      console.log("searchResult: ", searchResult);
 
       const { track } = await player.play(voiceChannel, searchResult, {
         nodeOptions: {

@@ -40,8 +40,10 @@ export default async function messageCreate(
     return;
   }
 
+  const filteredMessageContent = message.content.replace(/stacy/gi, "");
+
   // Determine whether or not to invoke a tool
-  const res = await llmWithTools.invoke(message.content);
+  const res = await llmWithTools.invoke(filteredMessageContent);
 
   console.log(res.tool_calls);
 

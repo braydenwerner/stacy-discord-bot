@@ -4,6 +4,7 @@ import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";
 import { Player } from "discord-player";
+import { YoutubeiExtractor } from "discord-player-youtubei";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 
 export type CustomClient = Client & {
@@ -20,18 +21,15 @@ const client = new Client({
 }) as CustomClient;
 client.commands = new Collection();
 
-// const player = new Player(client, {
-//   ytdlOptions: {
-//     quality: "highestaudio",
-//     highWaterMark: 1 << 25,
-//   },
-// });
 const player = new Player(client);
-// await player.extractors.loadDefault((ext) => ext !== "YouTubeExtractor");
 
 (async () => {
   try {
-    await player.extractors.loadDefault();
+    await player.extractors.register(YoutubeiExtractor, {});
+
+    await player.extractors.loadDefault(
+      (ext) => !["YouTubeExtractor"].includes(ext),
+    );
 
     registerMusicPlayerListeners(player);
     createEventHandler(client);

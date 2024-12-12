@@ -165,6 +165,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   if (process.env.DEBUG_ENABLED === "true") {
+    player.on("debug", console.log);
     player.events.on("debug", async (_, message) => {
       // Emitted when the player queue sends debug info
       // Useful for seeing what state the current queue is at

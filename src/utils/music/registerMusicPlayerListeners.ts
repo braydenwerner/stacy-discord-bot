@@ -171,5 +171,6 @@ export function registerMusicPlayerListeners(player: Player) {
       // Useful for seeing what state the current queue is at
       console.log(`Player debug event: ${message}`);
     });
+    player.on("error", console.log);
   }
 }

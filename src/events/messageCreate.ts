@@ -8,6 +8,7 @@ import {
   skipSongTool,
   viewSongQueueTool,
 } from "@/tools/musicPlayerTools";
+// import { playSongTool } from "@/tools/playSongTool";
 import { config, llm, withHistory } from "@/utils/useMessageHistory";
 import { type Message } from "discord.js";
 

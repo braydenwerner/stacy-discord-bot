@@ -1,6 +1,6 @@
 import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
 import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
-import { QueryType, useMainPlayer, usePlayer, useQueue } from "discord-player";
+import { useMainPlayer, usePlayer, useQueue } from "discord-player";
 import { EmbedBuilder, Message } from "discord.js";
 import { DynamicStructuredTool } from "langchain/tools";
 import { z } from "zod";

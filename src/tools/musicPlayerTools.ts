@@ -1,5 +1,5 @@
 import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
-import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
+// import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
 import { useMainPlayer, usePlayer, useQueue } from "discord-player";
 import { EmbedBuilder, Message } from "discord.js";
 import { DynamicStructuredTool } from "langchain/tools";
@@ -7,7 +7,7 @@ import { z } from "zod";
 
 import { queueEmbedResponse } from "../utils/music/musicUtil";
 
-const lyricsExtractor = lyricsExtractorSuper();
+// const lyricsExtractor = lyricsExtractorSuper();
 
 const playMusicSchema = z.object({
   songName: z.string().optional().describe("The name of the song to play."),
@@ -175,6 +175,8 @@ export const lyricsTool = new DynamicStructuredTool({
   }),
   func: async ({ songName, artist, message }) => {
     try {
+      const player = useMainPlayer();
+
       if (!message?.guild?.id) throw new Error("No guild found.");
 
       const query =
@@ -187,42 +189,34 @@ export const lyricsTool = new DynamicStructuredTool({
         return "";
       }
 
-      const res = await lyricsExtractor.search(query).catch(() => null);
-      if (!res) {
+      const res = await player.lyrics.search({ q: query }).catch(() => null);
+      if (!res?.length) {
         message.reply(
           `${emojis.error} ${message.member}, could not find lyrics for **\`${query}\`**, please try a different query`,
         );
         return "";
       }
 
-      const {
-        title,
-        fullTitle,
-        thumbnail,
-        image,
-        url,
-        artist: resolvedArtist,
-        lyrics,
-      } = res;
+      const { name, artistName, plainLyrics } = res[0];
 
-      let description = lyrics;
+      let description = plainLyrics;
       if (description && description.length > EMBED_DESCRIPTION_MAX_LENGTH)
         description =
           description.slice(0, EMBED_DESCRIPTION_MAX_LENGTH - 3) + "...";
 
       const lyricsEmbed = new EmbedBuilder()
         .setColor(1752220)
-        .setTitle(title ?? "Unknown")
+        .setTitle(name ?? "Unknown")
         .setAuthor({
-          name: resolvedArtist.name ?? "Unknown",
-          url: resolvedArtist.url ?? null,
-          iconURL: resolvedArtist.image ?? null,
+          name: artistName ?? "Unknown",
+          // url: url ?? null,
+          // iconURL: image ?? null,
         })
-        .setDescription(description ?? "Instrumental")
-        .setURL(url);
+        .setDescription(description ?? "Instrumental");
+      // .setURL(url);
 
-      if (image || thumbnail) lyricsEmbed.setImage(image ?? thumbnail);
-      if (fullTitle) lyricsEmbed.setFooter({ text: fullTitle });
+      // if (image || thumbnail) lyricsEmbed.setImage(image ?? thumbnail);
+      if (name) lyricsEmbed.setFooter({ text: name });
 
       await message.reply({ embeds: [lyricsEmbed] });
     } catch (error) {

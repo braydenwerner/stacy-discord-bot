@@ -3,8 +3,9 @@ import "dotenv/config";
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";
+import { DefaultExtractors } from "@discord-player/extractor";
 import { Player } from "discord-player";
-import { YoutubeiExtractor } from "discord-player-youtubei";
+// import { YoutubeiExtractor } from "discord-player-youtubei";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 
 export type CustomClient = Client & {
@@ -25,11 +26,11 @@ const player = new Player(client);
 
 (async () => {
   try {
-    await player.extractors.register(YoutubeiExtractor, {});
+    // await player.extractors.register(YoutubeiExtractor, {});
 
-    await player.extractors.loadDefault(
-      (ext) => !["YouTubeExtractor"].includes(ext),
-    );
+    // await player.extractors.loadDefault();
+
+    await player.extractors.loadMulti(DefaultExtractors);
 
     registerMusicPlayerListeners(player);
     createEventHandler(client);

@@ -9,6 +9,7 @@ declare global {
       OPENAI_API_KEY: string;
       OPENAI_ORG_ID: string;
       DEBUG_ENABLED: string;
+      TAVILY_API_KEY?: string;
     }
   }
 }

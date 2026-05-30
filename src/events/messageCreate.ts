@@ -11,6 +11,8 @@ import {
 } from "@/tools/musicPlayerTools";
 // import { playSongTool } from "@/tools/playSongTool";
 import { fetchPageTool } from "@/tools/fetchPageTool";
+import { pingGroupTool } from "@/tools/pingGroupTool";
+import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
 import {
   NICE_SYSTEM_PROMPT,
@@ -36,6 +38,8 @@ const tools: Record<string, DynamicStructuredTool> = {
   [skipSongTool.name]: skipSongTool,
   [viewSongQueueTool.name]: viewSongQueueTool,
   [lyricsTool.name]: lyricsTool,
+  [sendMessageTool.name]: sendMessageTool,
+  [pingGroupTool.name]: pingGroupTool,
 };
 
 // Read tools return text that gets fed back to the model for a persona-voiced answer.

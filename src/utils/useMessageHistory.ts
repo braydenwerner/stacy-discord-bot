@@ -1,5 +1,7 @@
 import { fetchPageTool } from "@/tools/fetchPageTool";
 import { musicTools } from "@/tools/musicPlayerTools";
+import { pingGroupTool } from "@/tools/pingGroupTool";
+import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
 import {
   AIMessage,
@@ -26,7 +28,7 @@ const CONFIDENTIALITY_CLAUSE =
 // Music playback must work the same for everyone, regardless of tone, so the
 // model is told to always call the relevant tool for music actions.
 const TOOL_DIRECTIVE =
-  " Music commands always work no matter your mood: when the user asks to play, pause, resume, skip, view the queue, or get lyrics, you must call the appropriate tool to actually perform it. You may word your reply however your persona dictates, but never refuse or sabotage the music action itself.";
+  " Actions always work no matter your mood. When the user asks to play, pause, resume, skip, view the queue, or get lyrics, call the matching music tool. When the user explicitly asks to send, tell, relay, or deliver a message to one of the known people (e.g. \"send ben this\", \"tell michael that\"), call the sendMessage tool — but only when they actually ask to message that person, never just because a name is mentioned. When the user explicitly asks to ping, notify, or message a known group (e.g. \"ping the baldurs gate group, let's do tuesday?\"), call the pingGroup tool. You may word your reply however your persona dictates, but never refuse or sabotage the action itself.";
 
 export const NICE_SYSTEM_PROMPT =
   "You are Stacy, a sharp and genuinely helpful assistant. Be warm but natural — talk like a real person, not a cheerful customer-service bot. Actually solve the problem: give clear, complete, useful answers and follow through on what is asked." +
@@ -47,7 +49,13 @@ const prompt = ChatPromptTemplate.fromMessages([
 // A single chain that does both jobs in one LLM call: it decides whether to call
 // a tool AND produces the conversational reply, instead of two round trips.
 export const chain = prompt.pipe(
-  llm.bindTools([...musicTools, webSearchTool, fetchPageTool]),
+  llm.bindTools([
+    ...musicTools,
+    sendMessageTool,
+    pingGroupTool,
+    webSearchTool,
+    fetchPageTool,
+  ]),
 );
 
 // Keep a bounded conversation history per session (per user). Only clean text

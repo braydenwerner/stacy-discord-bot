@@ -1,8 +1,9 @@
 import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
 // import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import type { RunnableConfig } from "@langchain/core/runnables";
 import { useMainPlayer, usePlayer, useQueue } from "discord-player";
 import { EmbedBuilder, Message } from "discord.js";
-import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { queueEmbedResponse } from "../utils/music/musicUtil";
@@ -10,23 +11,27 @@ import { queueEmbedResponse } from "../utils/music/musicUtil";
 // const lyricsExtractor = lyricsExtractorSuper();
 
 // The Discord message is injected by our own code at invoke time, never by the LLM.
-// zod v4's `z.custom<Message>()` cannot be serialized to JSON Schema (which langchain
-// requires to register tools for OpenAI function-calling), so we use an unconstrained
-// schema while preserving the `Message` type for the tool handlers.
-const messageSchema = z.any() as unknown as z.ZodType<Message>;
+// We pass it through the tool's runtime config (not its schema) so it never appears
+// in the JSON Schema sent to the model — saving tokens and avoiding confusing the LLM.
+function getMessage(config?: RunnableConfig): Message {
+  const message = (config?.configurable as { message?: Message } | undefined)
+    ?.message;
+  if (!message) throw new Error("No Discord message provided to tool.");
+  return message;
+}
 
 const playMusicSchema = z.object({
   songName: z.string().optional().describe("The name of the song to play."),
   artist: z.string().optional().describe("The artist of the song."),
   url: z.string().optional().describe("The URL of the song."),
-  message: messageSchema,
 });
 
 export const playSongTool = new DynamicStructuredTool({
   name: "playSong",
   description: "Plays a song. ONLY PROVIDE A URL IF GIVEN.",
   schema: playMusicSchema,
-  func: async ({ songName, artist, url, message }) => {
+  func: async ({ songName, artist, url }, _runManager, config) => {
+    const message = getMessage(config);
     try {
       const player = useMainPlayer();
       const voiceChannel = message.member?.voice.channel;
@@ -56,8 +61,8 @@ export const playSongTool = new DynamicStructuredTool({
 
       if (!track) throw new Error("Failed to play song.");
     } catch (error) {
-      console.error(`Error: ${error}`);
       message.reply(`Failed to play song. ${error}`);
+      throw error;
     }
 
     return "";
@@ -67,10 +72,9 @@ export const playSongTool = new DynamicStructuredTool({
 export const pauseOrResumeSongTool = new DynamicStructuredTool({
   name: "pauseOrResumeSong",
   description: "Pauses or resumes the current song.",
-  schema: z.object({
-    message: messageSchema,
-  }),
-  func: async ({ message }) => {
+  schema: z.object({}),
+  func: async (_input, _runManager, config) => {
+    const message = getMessage(config);
     try {
       const voiceChannel = message.member?.voice.channel;
 
@@ -92,8 +96,8 @@ export const pauseOrResumeSongTool = new DynamicStructuredTool({
         `${emojis.success} ${message.member}, ${newPauseState ? "paused" : "resumed"} playback`,
       );
     } catch (error) {
-      console.error(`Error: ${error}`);
       message.reply(`Failed to pause/resume song. ${error}`);
+      throw error;
     }
 
     return "";
@@ -103,10 +107,9 @@ export const pauseOrResumeSongTool = new DynamicStructuredTool({
 export const skipSongTool = new DynamicStructuredTool({
   name: "skipSong",
   description: "Skips the current song.",
-  schema: z.object({
-    message: messageSchema,
-  }),
-  func: async ({ message }) => {
+  schema: z.object({}),
+  func: async (_input, _runManager, config) => {
+    const message = getMessage(config);
     try {
       const voiceChannel = message.member?.voice.channel;
 
@@ -123,8 +126,8 @@ export const skipSongTool = new DynamicStructuredTool({
         `${emojis.success} ${message.member}, skipped the current song`,
       );
     } catch (error) {
-      console.error(`Error: ${error}`);
       message.reply(`Failed to skip song. ${error}`);
+      throw error;
     }
 
     return "";
@@ -134,10 +137,9 @@ export const skipSongTool = new DynamicStructuredTool({
 export const viewSongQueueTool = new DynamicStructuredTool({
   name: "viewSongQueue",
   description: "Views the current song queue.",
-  schema: z.object({
-    message: messageSchema,
-  }),
-  func: async ({ message }) => {
+  schema: z.object({}),
+  func: async (_input, _runManager, config) => {
+    const message = getMessage(config);
     try {
       const voiceChannel = message.member?.voice.channel;
 
@@ -160,8 +162,8 @@ export const viewSongQueueTool = new DynamicStructuredTool({
       // Show queue, interactive
       queueEmbedResponse(message, queue);
     } catch (error) {
-      console.error(`Error: ${error}`);
       message.reply(`Failed to view song queue. ${error}`);
+      throw error;
     }
 
     return "";
@@ -177,9 +179,9 @@ export const lyricsTool = new DynamicStructuredTool({
       .optional()
       .describe("The name of the song to get lyrics for."),
     artist: z.string().optional().describe("The artist of the song."),
-    message: messageSchema,
   }),
-  func: async ({ songName, artist, message }) => {
+  func: async ({ songName, artist }, _runManager, config) => {
+    const message = getMessage(config);
     try {
       const player = useMainPlayer();
 
@@ -226,10 +228,18 @@ export const lyricsTool = new DynamicStructuredTool({
 
       await message.reply({ embeds: [lyricsEmbed] });
     } catch (error) {
-      console.error(`Error: ${error}`);
       message.reply(`Failed to get lyrics. ${error}`);
+      throw error;
     }
 
     return "";
   },
 });
+
+export const musicTools = [
+  playSongTool,
+  pauseOrResumeSongTool,
+  skipSongTool,
+  viewSongQueueTool,
+  lyricsTool,
+];

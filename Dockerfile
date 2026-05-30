@@ -1,5 +1,6 @@
 # Use Node.js LTS (Long Term Support) version with Alpine Linux
-FROM node:20-alpine
+# Node 22+ is required by @discordjs/voice >= 0.19.
+FROM node:22-alpine
 
 # Install FFmpeg using apk
 RUN apk add --no-cache ffmpeg

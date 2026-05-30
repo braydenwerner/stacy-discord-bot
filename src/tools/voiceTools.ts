@@ -1,14 +1,18 @@
 import { __dirname } from "@/constants/constants";
+import { DynamicStructuredTool } from "@langchain/core/tools";
 import { QueryType, useMainPlayer } from "discord-player";
 import { Message } from "discord.js";
-import { DynamicStructuredTool } from "langchain/tools";
 import { z } from "zod";
+
+// See note in musicPlayerTools.ts: zod v4 cannot serialize `z.custom` to JSON Schema,
+// so we use an unconstrained schema while preserving the `Message` type.
+const messageSchema = z.any() as unknown as z.ZodType<Message>;
 
 export const comeSayHelloTool = new DynamicStructuredTool({
   name: "comeSayHello",
   description: "Stacy join the channel and say hello to you.",
   schema: z.object({
-    message: z.custom<Message>(),
+    message: messageSchema,
   }),
   func: async ({ message }) => {
     try {

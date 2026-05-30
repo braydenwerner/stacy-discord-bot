@@ -2,18 +2,24 @@ import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
 // import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
 import { useMainPlayer, usePlayer, useQueue } from "discord-player";
 import { EmbedBuilder, Message } from "discord.js";
-import { DynamicStructuredTool } from "langchain/tools";
+import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 
 import { queueEmbedResponse } from "../utils/music/musicUtil";
 
 // const lyricsExtractor = lyricsExtractorSuper();
 
+// The Discord message is injected by our own code at invoke time, never by the LLM.
+// zod v4's `z.custom<Message>()` cannot be serialized to JSON Schema (which langchain
+// requires to register tools for OpenAI function-calling), so we use an unconstrained
+// schema while preserving the `Message` type for the tool handlers.
+const messageSchema = z.any() as unknown as z.ZodType<Message>;
+
 const playMusicSchema = z.object({
   songName: z.string().optional().describe("The name of the song to play."),
   artist: z.string().optional().describe("The artist of the song."),
   url: z.string().optional().describe("The URL of the song."),
-  message: z.custom<Message>(),
+  message: messageSchema,
 });
 
 export const playSongTool = new DynamicStructuredTool({
@@ -62,7 +68,7 @@ export const pauseOrResumeSongTool = new DynamicStructuredTool({
   name: "pauseOrResumeSong",
   description: "Pauses or resumes the current song.",
   schema: z.object({
-    message: z.custom<Message>(),
+    message: messageSchema,
   }),
   func: async ({ message }) => {
     try {
@@ -98,7 +104,7 @@ export const skipSongTool = new DynamicStructuredTool({
   name: "skipSong",
   description: "Skips the current song.",
   schema: z.object({
-    message: z.custom<Message>(),
+    message: messageSchema,
   }),
   func: async ({ message }) => {
     try {
@@ -129,7 +135,7 @@ export const viewSongQueueTool = new DynamicStructuredTool({
   name: "viewSongQueue",
   description: "Views the current song queue.",
   schema: z.object({
-    message: z.custom<Message>(),
+    message: messageSchema,
   }),
   func: async ({ message }) => {
     try {
@@ -171,7 +177,7 @@ export const lyricsTool = new DynamicStructuredTool({
       .optional()
       .describe("The name of the song to get lyrics for."),
     artist: z.string().optional().describe("The artist of the song."),
-    message: z.custom<Message>(),
+    message: messageSchema,
   }),
   func: async ({ songName, artist, message }) => {
     try {

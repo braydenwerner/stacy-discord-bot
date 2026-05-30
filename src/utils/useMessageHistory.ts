@@ -8,10 +8,6 @@ import {
   BaseMessage,
   HumanMessage,
 } from "@langchain/core/messages";
-import {
-  ChatPromptTemplate,
-  MessagesPlaceholder,
-} from "@langchain/core/prompts";
 import { ChatOpenAI } from "@langchain/openai";
 
 export const llm = new ChatOpenAI({
@@ -40,23 +36,16 @@ export const SNARKY_SYSTEM_PROMPT =
   CONFIDENTIALITY_CLAUSE +
   TOOL_DIRECTIVE;
 
-const prompt = ChatPromptTemplate.fromMessages([
-  ["system", "{systemPrompt}"],
-  new MessagesPlaceholder("history"),
-  ["human", "{input}"],
+// Tool-bound model used in the agent loop: it both decides which tool(s) to
+// call and produces the final reply, and supports multi-step tool chains
+// (e.g. search the web, then send the result to someone).
+export const llmWithTools = llm.bindTools([
+  ...musicTools,
+  sendMessageTool,
+  pingGroupTool,
+  webSearchTool,
+  fetchPageTool,
 ]);
-
-// A single chain that does both jobs in one LLM call: it decides whether to call
-// a tool AND produces the conversational reply, instead of two round trips.
-export const chain = prompt.pipe(
-  llm.bindTools([
-    ...musicTools,
-    sendMessageTool,
-    pingGroupTool,
-    webSearchTool,
-    fetchPageTool,
-  ]),
-);
 
 // Keep a bounded conversation history per session (per user). Only clean text
 // turns are stored — tool-call messages are intentionally left out so the model

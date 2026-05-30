@@ -13,8 +13,8 @@ import {
 import {
   NICE_SYSTEM_PROMPT,
   SNARKY_SYSTEM_PROMPT,
-  config,
   llm,
+  sessionConfig,
   withHistory,
 } from "@/utils/useMessageHistory";
 import { DynamicStructuredTool } from "@langchain/core/tools";
@@ -53,6 +53,7 @@ export default async function messageCreate(
 
   const isFavoredUser = message.author.id === FAVORED_USER_ID;
   const systemPrompt = isFavoredUser ? NICE_SYSTEM_PROMPT : SNARKY_SYSTEM_PROMPT;
+  const config = sessionConfig(message.author.id);
 
   console.log(
     `[tone] user=${message.author.tag} (${message.author.id}) tone=${

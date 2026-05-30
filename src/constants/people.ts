@@ -11,6 +11,7 @@ export const USER_IDS: Record<string, string> = {
   ben: "213098147277176842",
   ryley: "152268038983516162",
   brayden: "268201627452833794",
+  kevin: "543923375438036993",
 };
 
 // Named groups -> member ids.

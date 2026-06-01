@@ -14,7 +14,10 @@ export const MS_IN_ONE_DAY = 864e5;
 
 export const EMBED_DESCRIPTION_MAX_LENGTH = 2048;
 
-export const FAVORED_USER_ID = "268201627452833794";
+export const FAVORED_USER_IDS = new Set([
+  "268201627452833794",
+  "639865199549218858",
+]);
 
 export const emojis = {
   success: "✅",

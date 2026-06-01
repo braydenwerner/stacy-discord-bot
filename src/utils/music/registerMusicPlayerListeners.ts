@@ -38,8 +38,17 @@ export function registerMusicPlayerListeners(player: Player) {
     });
   });
 
-  player.events.on("playerError", (err) => {
-    console.error(err);
+  player.events.on("playerError", (queue, err) => {
+    console.error("[music] playerError:", err);
+    queue?.metadata?.channel?.send?.({
+      embeds: [
+        {
+          color: 0xff0000,
+          title: "Playback Error",
+          description: String(err?.message ?? err).slice(0, EMBED_DESCRIPTION_MAX_LENGTH),
+        },
+      ],
+    });
   });
 
   player.events.on("audioTrackAdd", (queue, track) => {

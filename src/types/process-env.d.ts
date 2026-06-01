@@ -12,6 +12,7 @@ declare global {
       TAVILY_API_KEY?: string;
       CURSOR_API_KEY?: string;
       GITHUB_TOKEN?: string;
+      YOUTUBE_COOKIE?: string;
     }
   }
 }

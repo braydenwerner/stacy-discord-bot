@@ -22,6 +22,7 @@
     "@octokit/rest": "^22.0.1",
     "@web-scrobbler/metadata-filter": "^3.2.0",
     "discord-player": "^7.2.0",
+    "discord-player-youtubei": "^2.0.0",
     "discord.js": "^14.26.4",
     "dotenv": "^17.4.2",
     "duck-duck-scrape": "^2.2.7",
@@ -30,6 +31,7 @@
     "libsodium-wrappers": "^0.8.4",
     "mediaplex": "1.0.0",
     "prettier": "^3.8.3",
+    "youtube-dl-exec": "^3.1.7",
     "zod": "^4.4.3"
   },
   "scripts": {

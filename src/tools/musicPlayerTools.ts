@@ -3,7 +3,7 @@ import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
 import { truncateMessage } from "@/utils/truncateMessage";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import type { RunnableConfig } from "@langchain/core/runnables";
-import { useMainPlayer, usePlayer, useQueue } from "discord-player";
+import { QueryType, useMainPlayer, usePlayer, useQueue } from "discord-player";
 import { EmbedBuilder, Message } from "discord.js";
 import { z } from "zod";
 
@@ -45,10 +45,18 @@ export const playSongTool = new DynamicStructuredTool({
       const query = `${songName} ${artist ? `by ${artist}` : ""}`;
       console.log("query: ", url || query);
       const searchResult = await player.search(url || query, {
-        // searchEngine: "YOUTUBE_SEARCH",
+        searchEngine: url
+          ? QueryType.AUTO
+          : QueryType.YOUTUBE_SEARCH,
+        fallbackSearchEngine: QueryType.YOUTUBE_SEARCH,
         requestedBy: message.member.user,
       });
-      console.log("searchResult: ", searchResult);
+      console.log("searchResult: ", searchResult?.tracks?.[0]?.url ?? searchResult);
+
+      if (!searchResult?.tracks?.length) {
+        message.reply(truncateMessage("Couldn't find that song."));
+        return "";
+      }
 
       const { track } = await player.play(voiceChannel, searchResult, {
         nodeOptions: {

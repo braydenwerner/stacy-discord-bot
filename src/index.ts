@@ -6,7 +6,7 @@ import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerL
 import { startTokenReporter } from "@/utils/tokenTracker";
 import { DefaultExtractors } from "@discord-player/extractor";
 import { Player } from "discord-player";
-// import { YoutubeiExtractor } from "discord-player-youtubei";
+import { YoutubeiExtractor } from "discord-player-youtubei";
 import { Client, Collection, GatewayIntentBits } from "discord.js";
 
 export type CustomClient = Client & {
@@ -27,9 +27,15 @@ const player = new Player(client);
 
 (async () => {
   try {
-    // await player.extractors.register(YoutubeiExtractor, {});
-
-    // await player.extractors.loadDefault();
+    // youtubei.js streaming breaks without a cookie (decipher errors). yt-dlp is the
+    // reliable path on the Pi; search still uses Innertube.
+    await player.extractors.register(YoutubeiExtractor, {
+      ...(process.env.YOUTUBE_COOKIE ? { cookie: process.env.YOUTUBE_COOKIE } : {}),
+      generateWithPoToken: true,
+      useYoutubeDL: true,
+      disablePlayer: true,
+      streamOptions: { useClient: "ANDROID" },
+    });
 
     await player.extractors.loadMulti(DefaultExtractors);
 

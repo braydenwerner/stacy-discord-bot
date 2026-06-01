@@ -3,6 +3,7 @@ import "dotenv/config";
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";
+import { startTokenReporter } from "@/utils/tokenTracker";
 import { DefaultExtractors } from "@discord-player/extractor";
 import { Player } from "discord-player";
 // import { YoutubeiExtractor } from "discord-player-youtubei";
@@ -33,6 +34,7 @@ const player = new Player(client);
     await player.extractors.loadMulti(DefaultExtractors);
 
     registerMusicPlayerListeners(player);
+    startTokenReporter();
     createEventHandler(client);
     createCommandHandler(client);
 

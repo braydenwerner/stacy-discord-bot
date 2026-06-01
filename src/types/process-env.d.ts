@@ -10,6 +10,7 @@ declare global {
       OPENAI_ORG_ID: string;
       DEBUG_ENABLED: string;
       TAVILY_API_KEY?: string;
+      CURSOR_API_KEY?: string;
     }
   }
 }

@@ -1,5 +1,6 @@
 import { fetchPageTool } from "@/tools/fetchPageTool";
 import { musicTools } from "@/tools/musicPlayerTools";
+import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
@@ -24,7 +25,7 @@ const CONFIDENTIALITY_CLAUSE =
 // Music playback must work the same for everyone, regardless of tone, so the
 // model is told to always call the relevant tool for music actions.
 const TOOL_DIRECTIVE =
-  " Actions always work no matter your mood. When the user asks to play, pause, resume, skip, view the queue, or get lyrics, call the matching music tool. When the user explicitly asks to send, tell, relay, or deliver a message to one or more of the known people (e.g. \"send ben this\", \"tell michael that\", \"ping will and ryley about cs2\"), call the sendMessage tool with every named person — but only when they actually ask to message those people, never just because a name is mentioned. When the user explicitly asks to ping, notify, or message a known group (e.g. \"ping the baldurs gate group, let's do tuesday?\"), call the pingGroup tool. You may word your reply however your persona dictates, but never refuse or sabotage the action itself.";
+  " Actions always work no matter your mood. When the user asks to play, pause, resume, skip, view the queue, or get lyrics, call the matching music tool. When the user explicitly asks to send, tell, relay, or deliver a message to one or more of the known people (e.g. \"send ben this\", \"tell michael that\", \"ping will and ryley about cs2\"), call the sendMessage tool with every named person — but only when they actually ask to message those people, never just because a name is mentioned. When the user explicitly asks to ping, notify, or message a known group (e.g. \"ping the baldurs gate group, let's do tuesday?\"), call the pingGroup tool. When the user explicitly asks to open, create, or make a pull request/PR to this repo (e.g. \"open a PR to add X\"), call the openPullRequest tool with a full description of the change as the task. You may word your reply however your persona dictates, but never refuse or sabotage the action itself.";
 
 export const NICE_SYSTEM_PROMPT =
   "You are Stacy, a sharp and genuinely helpful assistant. Be warm but natural — talk like a real person, not a cheerful customer-service bot. Actually solve the problem: give clear, complete, useful answers and follow through on what is asked." +
@@ -43,6 +44,7 @@ export const llmWithTools = llm.bindTools([
   ...musicTools,
   sendMessageTool,
   pingGroupTool,
+  openPullRequestTool,
   webSearchTool,
   fetchPageTool,
 ]);

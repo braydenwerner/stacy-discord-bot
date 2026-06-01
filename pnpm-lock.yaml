@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@discord-player/extractor':
         specifier: ^7.2.0
-        version: 7.2.0
+        version: 7.2.0(encoding@0.1.13)
       '@discordjs/builders':
         specifier: ^1.14.1
         version: 1.14.1
@@ -28,7 +28,7 @@ importers:
         version: 3.2.0
       discord-player:
         specifier: ^7.2.0
-        version: 7.2.0(@discord-player/extractor@7.2.0)(mediaplex@1.0.0)(tsx@4.22.3)(yaml@2.7.1)
+        version: 7.2.0(@discord-player/extractor@7.2.0(encoding@0.1.13))(mediaplex@1.0.0)(tsx@4.22.3)(yaml@2.7.1)
       discord.js:
         specifier: ^14.26.4
         version: 14.26.4
@@ -1006,6 +1006,9 @@ packages:
   duck-duck-scrape@2.2.7:
     resolution: {integrity: sha512-BEcglwnfx5puJl90KQfX+Q2q5vCguqyMpZcSRPBWk8OY55qWwV93+E+7DbIkrGDW4qkqPfUvtOUdi0lXz6lEMQ==}
 
+  encoding@0.1.13:
+    resolution: {integrity: sha512-ETBauow1T35Y/WZMkio9jiM0Z5xjHHmJ4XmjZOq1l/dXz3lr2sRn87nJy20RupqSh1F2m3HHPSp8ShIPQJrJ3A==}
+
   entities@4.5.0:
     resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
     engines: {node: '>=0.12'}
@@ -1825,12 +1828,12 @@ snapshots:
 
   '@discord-player/equalizer@7.2.0': {}
 
-  '@discord-player/extractor@7.2.0':
+  '@discord-player/extractor@7.2.0(encoding@0.1.13)':
     dependencies:
       file-type: 16.5.4
       isomorphic-unfetch: 4.0.2
       node-html-parser: 7.1.0
-      reverbnation-scraper: 2.0.0
+      reverbnation-scraper: 2.0.0(encoding@0.1.13)
       soundcloud.ts: 0.5.5
       spotify-url-info: 3.3.0
     transitivePeerDependencies:
@@ -2482,10 +2485,10 @@ snapshots:
 
   discord-api-types@0.38.48: {}
 
-  discord-player@7.2.0(@discord-player/extractor@7.2.0)(mediaplex@1.0.0)(tsx@4.22.3)(yaml@2.7.1):
+  discord-player@7.2.0(@discord-player/extractor@7.2.0(encoding@0.1.13))(mediaplex@1.0.0)(tsx@4.22.3)(yaml@2.7.1):
     dependencies:
       '@discord-player/equalizer': 7.2.0
-      '@discord-player/extractor': 7.2.0
+      '@discord-player/extractor': 7.2.0(encoding@0.1.13)
       '@discord-player/ffmpeg': 7.2.0
       '@discord-player/utils': 7.2.0
       '@web-scrobbler/metadata-filter': 3.2.0
@@ -2561,6 +2564,11 @@ snapshots:
     dependencies:
       html-entities: 2.6.0
       needle: 3.5.0
+
+  encoding@0.1.13:
+    dependencies:
+      iconv-lite: 0.6.3
+    optional: true
 
   entities@4.5.0: {}
 
@@ -2938,9 +2946,11 @@ snapshots:
 
   node-domexception@1.0.0: {}
 
-  node-fetch@2.7.0:
+  node-fetch@2.7.0(encoding@0.1.13):
     dependencies:
       whatwg-url: 5.0.0
+    optionalDependencies:
+      encoding: 0.1.13
 
   node-fetch@3.3.2:
     dependencies:
@@ -3075,9 +3085,9 @@ snapshots:
 
   reusify@1.1.0: {}
 
-  reverbnation-scraper@2.0.0:
+  reverbnation-scraper@2.0.0(encoding@0.1.13):
     dependencies:
-      node-fetch: 2.7.0
+      node-fetch: 2.7.0(encoding@0.1.13)
     transitivePeerDependencies:
       - encoding
 

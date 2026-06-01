@@ -11,9 +11,11 @@ import {
 } from "@/tools/musicPlayerTools";
 // import { playSongTool } from "@/tools/playSongTool";
 import { fetchPageTool } from "@/tools/fetchPageTool";
+import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
+import { recordUsage } from "@/utils/tokenTracker";
 import {
   NICE_SYSTEM_PROMPT,
   SNARKY_SYSTEM_PROMPT,
@@ -42,6 +44,7 @@ const tools: Record<string, DynamicStructuredTool> = {
   [lyricsTool.name]: lyricsTool,
   [sendMessageTool.name]: sendMessageTool,
   [pingGroupTool.name]: pingGroupTool,
+  [openPullRequestTool.name]: openPullRequestTool,
 };
 
 // Read tools return text that gets fed back to the model for a persona-voiced answer.
@@ -93,6 +96,7 @@ export default async function messageCreate(
 
   for (let step = 0; step < MAX_STEPS; step++) {
     const aiMessage = await llmWithTools.invoke(messages);
+    recordUsage(aiMessage.usage_metadata);
     messages.push(aiMessage);
 
     const toolCalls = aiMessage.tool_calls ?? [];

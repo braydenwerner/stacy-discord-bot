@@ -1,5 +1,6 @@
 import "dotenv/config";
 
+// Entry point for the Stacy Discord bot process.
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";

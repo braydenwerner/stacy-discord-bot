@@ -16,6 +16,7 @@ import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
 import { recordUsage } from "@/utils/tokenTracker";
+import { truncateMessage } from "@/utils/truncateMessage";
 import {
   NICE_SYSTEM_PROMPT,
   SNARKY_SYSTEM_PROMPT,
@@ -177,7 +178,8 @@ export default async function messageCreate(
   }
 
   if (finalText) {
-    message.reply(finalText);
+    const truncatedText = truncateMessage(finalText);
+    message.reply(truncatedText);
     recordTurn(sessionId, message.content, finalText);
   } else {
     recordTurn(

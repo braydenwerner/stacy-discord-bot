@@ -5,6 +5,7 @@ import {
   finalizeQueueCard,
   refreshQueueCard,
 } from "@/utils/prQueueCard";
+import { truncateMessage } from "@/utils/truncateMessage";
 import { Message } from "discord.js";
 
 const LOADING_REACTION = "\u23f3"; // hourglass
@@ -172,7 +173,8 @@ async function swapReaction(
 
 async function safeReply(message: Message, content: string): Promise<void> {
   try {
-    await message.reply(content);
+    const truncatedContent = truncateMessage(content);
+    await message.reply(truncatedContent);
   } catch (error) {
     console.error(`[tool] openPullRequest reply failed: ${error}`);
   }

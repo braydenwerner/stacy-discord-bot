@@ -6,6 +6,7 @@ import {
   refreshQueueCard,
 } from "@/utils/prQueueCard";
 import { truncateMessage } from "@/utils/truncateMessage";
+import { markPrAsReady } from "@/utils/githubApi";
 import { Message } from "discord.js";
 
 const LOADING_REACTION = "\u23f3"; // hourglass
@@ -123,6 +124,17 @@ async function runPrJob(job: PrJob): Promise<void> {
 
     if (status.succeeded) {
       await swapReaction(message, LOADING_REACTION, emojis.success);
+      
+      // Mark the PR as ready for review if a PR URL was returned
+      if (status.prUrl) {
+        try {
+          await markPrAsReady(status.prUrl);
+        } catch (error) {
+          console.error(`[tool] Failed to mark PR as ready: ${error}`);
+          // Don't fail the job if marking as ready fails
+        }
+      }
+      
       await safeReply(
         message,
         status.prUrl

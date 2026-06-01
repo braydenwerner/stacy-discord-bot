@@ -11,6 +11,7 @@ declare global {
       DEBUG_ENABLED: string;
       TAVILY_API_KEY?: string;
       CURSOR_API_KEY?: string;
+      GITHUB_TOKEN?: string;
     }
   }
 }

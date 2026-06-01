@@ -1,5 +1,6 @@
 import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
 // import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
+import { truncateMessage } from "@/utils/truncateMessage";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { useMainPlayer, usePlayer, useQueue } from "discord-player";
@@ -37,7 +38,7 @@ export const playSongTool = new DynamicStructuredTool({
       const voiceChannel = message.member?.voice.channel;
 
       if (!voiceChannel) {
-        message.reply("You need to be in a voice channel to play music!");
+        message.reply(truncateMessage("You need to be in a voice channel to play music!"));
         return "";
       }
 
@@ -61,7 +62,7 @@ export const playSongTool = new DynamicStructuredTool({
 
       if (!track) throw new Error("Failed to play song.");
     } catch (error) {
-      message.reply(`Failed to play song. ${error}`);
+      message.reply(truncateMessage(`Failed to play song. ${error}`));
       throw error;
     }
 
@@ -81,7 +82,7 @@ export const pauseOrResumeSongTool = new DynamicStructuredTool({
       if (!message?.guild?.id) throw new Error("No guild found.");
       if (!voiceChannel) {
         message.reply(
-          "You need to be in a voice channel to pause/resume music!",
+          truncateMessage("You need to be in a voice channel to pause/resume music!"),
         );
         return "";
       }
@@ -93,10 +94,10 @@ export const pauseOrResumeSongTool = new DynamicStructuredTool({
       guildPlayerNode.setPaused(newPauseState);
 
       await message.reply(
-        `${emojis.success} ${message.member}, ${newPauseState ? "paused" : "resumed"} playback`,
+        truncateMessage(`${emojis.success} ${message.member}, ${newPauseState ? "paused" : "resumed"} playback`),
       );
     } catch (error) {
-      message.reply(`Failed to pause/resume song. ${error}`);
+      message.reply(truncateMessage(`Failed to pause/resume song. ${error}`));
       throw error;
     }
 
@@ -115,7 +116,7 @@ export const skipSongTool = new DynamicStructuredTool({
 
       if (!message?.guild?.id) throw new Error("No guild found.");
       if (!voiceChannel) {
-        message.reply("You need to be in a voice channel to skip music!");
+        message.reply(truncateMessage("You need to be in a voice channel to skip music!"));
         return "";
       }
 
@@ -123,10 +124,10 @@ export const skipSongTool = new DynamicStructuredTool({
       if (!guildPlayerNode) throw new Error("No player node found.");
       guildPlayerNode.skip();
       await message.reply(
-        `${emojis.success} ${message.member}, skipped the current song`,
+        truncateMessage(`${emojis.success} ${message.member}, skipped the current song`),
       );
     } catch (error) {
-      message.reply(`Failed to skip song. ${error}`);
+      message.reply(truncateMessage(`Failed to skip song. ${error}`));
       throw error;
     }
 
@@ -146,7 +147,7 @@ export const viewSongQueueTool = new DynamicStructuredTool({
       if (!message?.guild?.id) throw new Error("No guild found.");
       if (!voiceChannel) {
         message.reply(
-          "You need to be in a voice channel to view the song queue!",
+          truncateMessage("You need to be in a voice channel to view the song queue!"),
         );
         return "";
       }
@@ -154,7 +155,7 @@ export const viewSongQueueTool = new DynamicStructuredTool({
       const queue = useQueue(message.guild.id);
       if (!queue) {
         message.reply({
-          content: `${emojis.error} ${message.member}, queue is currently empty.`,
+          content: truncateMessage(`${emojis.error} ${message.member}, queue is currently empty.`),
         });
         return "";
       }
@@ -162,7 +163,7 @@ export const viewSongQueueTool = new DynamicStructuredTool({
       // Show queue, interactive
       queueEmbedResponse(message, queue);
     } catch (error) {
-      message.reply(`Failed to view song queue. ${error}`);
+      message.reply(truncateMessage(`Failed to view song queue. ${error}`));
       throw error;
     }
 
@@ -192,7 +193,7 @@ export const lyricsTool = new DynamicStructuredTool({
         `${songName} ${artist ? `by ${artist}` : ""}`;
       if (!query) {
         message.reply(
-          `${emojis.error} ${message.member}, please provide a query, currently playing song can only be used when playback is active - this command has been cancelled`,
+          truncateMessage(`${emojis.error} ${message.member}, please provide a query, currently playing song can only be used when playback is active - this command has been cancelled`),
         );
         return "";
       }
@@ -200,7 +201,7 @@ export const lyricsTool = new DynamicStructuredTool({
       const res = await player.lyrics.search({ q: query }).catch(() => null);
       if (!res?.length) {
         message.reply(
-          `${emojis.error} ${message.member}, could not find lyrics for **\`${query}\`**, please try a different query`,
+          truncateMessage(`${emojis.error} ${message.member}, could not find lyrics for **\`${query}\`**, please try a different query`),
         );
         return "";
       }
@@ -228,7 +229,7 @@ export const lyricsTool = new DynamicStructuredTool({
 
       await message.reply({ embeds: [lyricsEmbed] });
     } catch (error) {
-      message.reply(`Failed to get lyrics. ${error}`);
+      message.reply(truncateMessage(`Failed to get lyrics. ${error}`));
       throw error;
     }
 

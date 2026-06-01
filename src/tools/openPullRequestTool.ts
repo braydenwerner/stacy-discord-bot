@@ -1,6 +1,7 @@
 import { FAVORED_USER_ID } from "@/constants/constants";
 import { enqueuePullRequest } from "@/utils/prQueue";
 import { getToolMessage } from "@/utils/getToolMessage";
+import { truncateMessage } from "@/utils/truncateMessage";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -22,12 +23,12 @@ export const openPullRequestTool = new DynamicStructuredTool({
 
     // Hard gate: only the owner may open PRs (the real boundary, independent of persona).
     if (message.author.id !== FAVORED_USER_ID) {
-      message.reply("I can't open pull requests for you.");
+      message.reply(truncateMessage("I can't open pull requests for you."));
       return "";
     }
 
     if (!process.env.CURSOR_API_KEY) {
-      message.reply("PR support isn't configured yet (missing CURSOR_API_KEY).");
+      message.reply(truncateMessage("PR support isn't configured yet (missing CURSOR_API_KEY)."));
       return "";
     }
 

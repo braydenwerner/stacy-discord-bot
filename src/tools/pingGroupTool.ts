@@ -1,5 +1,6 @@
 import { resolveGroupIds } from "@/constants/people";
 import { getToolMessage } from "@/utils/getToolMessage";
+import { truncateMessage } from "@/utils/truncateMessage";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -37,7 +38,9 @@ export const pingGroupTool = new DynamicStructuredTool({
 
       // `<@id>` renders in Discord as each person's @username (and pings them).
       const mentions = targets.map((id) => `<@${id}>`).join(" ");
-      await message.channel.send(`${mentions} ${text}`.trim());
+      const fullMessage = `${mentions} ${text}`.trim();
+      const truncatedMessage = truncateMessage(fullMessage);
+      await message.channel.send(truncatedMessage);
     } catch (error) {
       message.reply(`Failed to ping the group. ${error}`);
       throw error;

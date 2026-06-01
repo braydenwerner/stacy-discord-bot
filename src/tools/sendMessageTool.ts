@@ -1,5 +1,6 @@
 import { resolveUserId } from "@/constants/people";
 import { getToolMessage } from "@/utils/getToolMessage";
+import { truncateMessage } from "@/utils/truncateMessage";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -48,7 +49,9 @@ export const sendMessageTool = new DynamicStructuredTool({
 
       // `<@id>` renders in Discord as the person's @username (and pings them).
       const mentions = ids.map((id) => `<@${id}>`).join(" ");
-      await message.channel.send(`${mentions} ${text}`.trim());
+      const fullMessage = `${mentions} ${text}`.trim();
+      const truncatedMessage = truncateMessage(fullMessage);
+      await message.channel.send(truncatedMessage);
     } catch (error) {
       message.reply(`Failed to send message. ${error}`);
       throw error;

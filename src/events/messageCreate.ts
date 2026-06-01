@@ -1,6 +1,6 @@
 // https://js.langchain.com/docs/modules/chains/additional/openai_functions/
 
-import { FAVORED_USER_ID } from "@/constants/constants";
+import { FAVORED_USER_IDS } from "@/constants/constants";
 import type { CustomClient } from "@/index";
 import {
   lyricsTool,
@@ -73,7 +73,7 @@ export default async function messageCreate(
     return;
   }
 
-  const isFavoredUser = message.author.id === FAVORED_USER_ID;
+  const isFavoredUser = FAVORED_USER_IDS.has(message.author.id);
   const systemPrompt = isFavoredUser ? NICE_SYSTEM_PROMPT : SNARKY_SYSTEM_PROMPT;
   const sessionId = message.author.id;
 

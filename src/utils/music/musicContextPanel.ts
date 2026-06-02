@@ -208,6 +208,60 @@ function createLyricsEmbed(
   return embed;
 }
 
+function resolvePanelEmbed(
+  queue: GuildQueue,
+  view: ContextPanelView,
+  lyricsData?: MusicContextState["lyricsData"],
+): EmbedBuilder {
+  switch (view) {
+    case "queue":
+      return createQueueEmbed(queue, queue.guild);
+    case "lyrics":
+      return lyricsData
+        ? createLyricsEmbed(lyricsData, queue.guild)
+        : createNowPlayingEmbed(queue, queue.guild);
+    case "nowPlaying":
+    default:
+      return createNowPlayingEmbed(queue, queue.guild);
+  }
+}
+
+/** Create or refresh the Now Playing panel when playback starts. */
+export async function ensureNowPlayingPanel(queue: GuildQueue): Promise<void> {
+  const guildId = queue.guild.id;
+  if (guildContextPanels.has(guildId)) {
+    await updateContextPanel(queue, "nowPlaying");
+    return;
+  }
+
+  const requestMessage = queue.metadata?.requestMessage as Message | undefined;
+  if (requestMessage) {
+    await createOrUpdateContextPanel(requestMessage, queue, "nowPlaying");
+    return;
+  }
+
+  const channel = queue.metadata?.channel;
+  if (!channel?.isSendable()) {
+    console.warn("[music] cannot post now playing panel — no sendable channel");
+    return;
+  }
+
+  const embed = resolvePanelEmbed(queue, "nowPlaying");
+  const buttons = createButtons("nowPlaying", false);
+  const previewContent = queueLinkPreviewContent(queue);
+
+  const panelMessage = await channel.send({
+    content: previewContent,
+    embeds: [embed],
+    components: [buttons],
+  });
+
+  guildContextPanels.set(guildId, {
+    message: panelMessage,
+    currentView: "nowPlaying",
+  });
+}
+
 export async function updateContextPanel(
   queue: GuildQueue,
   view?: ContextPanelView,
@@ -226,24 +280,7 @@ export async function updateContextPanel(
     state.lyricsData = lyricsData;
   }
 
-  let embed: EmbedBuilder;
-  switch (state.currentView) {
-    case "queue":
-      embed = createQueueEmbed(queue, queue.guild);
-      break;
-    case "lyrics":
-      if (state.lyricsData) {
-        embed = createLyricsEmbed(state.lyricsData, queue.guild);
-      } else {
-        embed = createNowPlayingEmbed(queue, queue.guild);
-      }
-      break;
-    case "nowPlaying":
-    default:
-      embed = createNowPlayingEmbed(queue, queue.guild);
-      break;
-  }
-
+  const embed = resolvePanelEmbed(queue, state.currentView, state.lyricsData);
   const buttons = createButtons(state.currentView, !!state.lyricsData);
   const previewContent = queueLinkPreviewContent(queue);
 
@@ -268,24 +305,11 @@ export async function createOrUpdateContextPanel(
   const guildId = queue.guild.id;
   const existingState = guildContextPanels.get(guildId);
 
-  let embed: EmbedBuilder;
-  switch (view) {
-    case "queue":
-      embed = createQueueEmbed(queue, queue.guild);
-      break;
-    case "lyrics":
-      if (lyricsData) {
-        embed = createLyricsEmbed(lyricsData, queue.guild);
-      } else {
-        embed = createNowPlayingEmbed(queue, queue.guild);
-      }
-      break;
-    case "nowPlaying":
-    default:
-      embed = createNowPlayingEmbed(queue, queue.guild);
-      break;
-  }
-
+  const embed = resolvePanelEmbed(
+    queue,
+    view,
+    lyricsData ?? existingState?.lyricsData,
+  );
   const buttons = createButtons(view, !!lyricsData || !!existingState?.lyricsData);
   const previewContent = queueLinkPreviewContent(queue);
 

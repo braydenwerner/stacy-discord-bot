@@ -1,7 +1,10 @@
 import { escapeMarkdown } from "@discordjs/builders";
 import type { Player } from "discord-player";
 import { trackEventPayload } from "@/utils/music/musicMessage";
-import { updateContextPanel, clearContextPanel } from "./musicContextPanel";
+import {
+  ensureNowPlayingPanel,
+  clearContextPanel,
+} from "./musicContextPanel";
 
 // https://github.com/Mirasaki/mirasaki-music-bot/blob/main/src/music-player.js
 
@@ -12,8 +15,7 @@ export function registerMusicPlayerListeners(player: Player) {
   player.events.on("playerStart", async (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
     
-    // Update the unified context panel to show now playing
-    await updateContextPanel(queue, "nowPlaying");
+    await ensureNowPlayingPanel(queue);
   });
 
   player.events.on("error", (queue, error) => {

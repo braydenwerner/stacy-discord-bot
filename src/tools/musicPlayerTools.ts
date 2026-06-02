@@ -62,9 +62,9 @@ export const playSongTool = new DynamicStructuredTool({
       const { track } = await player.play(voiceChannel, searchResult, {
         nodeOptions: {
           metadata: {
-            // this is important for the event listeners
             channel: message.channel,
             member: message.member,
+            requestMessage: message,
           },
         },
       });

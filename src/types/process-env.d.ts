@@ -13,6 +13,8 @@ declare global {
       CURSOR_API_KEY?: string;
       GITHUB_TOKEN?: string;
       YOUTUBE_COOKIE?: string;
+      /** SQLite file path (default: ./data/stacy.db) */
+      DATABASE_PATH?: string;
     }
   }
 }

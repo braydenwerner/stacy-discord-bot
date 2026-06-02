@@ -1,3 +1,4 @@
+import { loadTokenTotals, persistTokenTotals } from "@/db/tokenTotals";
 import { MS_IN_ONE_HOUR, MS_IN_ONE_MINUTE } from "@/constants/constants";
 
 // LangChain standardizes provider usage onto this shape on AIMessage.usage_metadata.
@@ -14,16 +15,27 @@ const OUTPUT_PER_1M = 8.0;
 let totalInput = 0;
 let totalOutput = 0;
 let totalCalls = 0;
+let totalsLoaded = false;
 
 let windowInput = 0;
 let windowOutput = 0;
 let windowCalls = 0;
+
+function ensureTotalsLoaded(): void {
+  if (totalsLoaded) return;
+  const persisted = loadTokenTotals();
+  totalInput = persisted.total_input;
+  totalOutput = persisted.total_output;
+  totalCalls = persisted.total_calls;
+  totalsLoaded = true;
+}
 
 function cost(inputTokens: number, outputTokens: number): number {
   return (inputTokens / 1e6) * INPUT_PER_1M + (outputTokens / 1e6) * OUTPUT_PER_1M;
 }
 
 export function recordUsage(usage?: UsageMetadata): void {
+  ensureTotalsLoaded();
   if (!usage) return;
   const input = usage.input_tokens ?? 0;
   const output = usage.output_tokens ?? 0;
@@ -33,6 +45,7 @@ export function recordUsage(usage?: UsageMetadata): void {
   windowInput += input;
   windowOutput += output;
   windowCalls += 1;
+  persistTokenTotals(totalInput, totalOutput, totalCalls);
 }
 
 export type UsageSnapshot = {
@@ -43,6 +56,7 @@ export type UsageSnapshot = {
 };
 
 export function getUsageSnapshot(): UsageSnapshot {
+  ensureTotalsLoaded();
   return {
     totalInput,
     totalOutput,
@@ -56,6 +70,7 @@ let reporter: NodeJS.Timeout | null = null;
 // Periodically logs token spend (cumulative + since the last report) and resets
 // the window. Call once at startup.
 export function startTokenReporter(intervalMs = MS_IN_ONE_HOUR): void {
+  ensureTotalsLoaded();
   if (reporter) return;
   const minutes = Math.round(intervalMs / MS_IN_ONE_MINUTE);
   reporter = setInterval(() => {

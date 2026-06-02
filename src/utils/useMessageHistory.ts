@@ -4,12 +4,10 @@ import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
-import {
-  AIMessage,
-  BaseMessage,
-  HumanMessage,
-} from "@langchain/core/messages";
+import { getHistory, recordTurn } from "@/db/messageHistory";
 import { ChatOpenAI } from "@langchain/openai";
+
+export { getHistory, recordTurn };
 
 export const llm = new ChatOpenAI({
   model: "gpt-4.1",
@@ -55,26 +53,6 @@ export const llmWithTools = llm.bindTools([
   fetchPageTool,
 ]);
 
-// Keep a bounded conversation history per session (per user). Only clean text
-// turns are stored — tool-call messages are intentionally left out so the model
-// is never sent an assistant tool-call without its matching tool result, and so
-// input size stays capped on long threads.
-const MAX_HISTORY_MESSAGES = 10;
-const histories = new Map<string, BaseMessage[]>();
-
-export function getHistory(sessionId: string): BaseMessage[] {
-  return histories.get(sessionId) ?? [];
-}
-
-export function recordTurn(
-  sessionId: string,
-  userText: string,
-  stacyText: string,
-): void {
-  const history = histories.get(sessionId) ?? [];
-  history.push(new HumanMessage(userText), new AIMessage(stacyText));
-  if (history.length > MAX_HISTORY_MESSAGES) {
-    history.splice(0, history.length - MAX_HISTORY_MESSAGES);
-  }
-  histories.set(sessionId, history);
-}
+// Conversation history is persisted in SQLite (see @/db/messageHistory).
+// Only clean text turns are stored — tool-call messages are left out so the
+// model is never sent an assistant tool-call without its matching tool result.

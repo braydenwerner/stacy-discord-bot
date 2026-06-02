@@ -1,5 +1,6 @@
 import "dotenv/config";
 
+import { closeDatabase, initDatabase } from "@/db/database";
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";
@@ -25,8 +26,18 @@ client.commands = new Collection();
 
 const player = new Player(client);
 
+function shutdown(): void {
+  closeDatabase();
+  process.exit(0);
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
+
 (async () => {
   try {
+    initDatabase();
+
     // youtubei.js streaming breaks without a cookie (decipher errors). yt-dlp is the
     // reliable path on the Pi; search still uses Innertube.
     await player.extractors.register(YoutubeiExtractor, {

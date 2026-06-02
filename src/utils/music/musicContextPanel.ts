@@ -8,6 +8,7 @@ import {
   EmbedBuilder,
   Message,
   Guild,
+  type SendableChannels,
   escapeMarkdown,
 } from "discord.js";
 import { queueLinkPreviewContent } from "@/utils/music/musicMessage";
@@ -33,7 +34,82 @@ export function getContextPanel(guildId: string): MusicContextState | undefined 
 }
 
 export function clearContextPanel(guildId: string): void {
+  const state = guildContextPanels.get(guildId);
+  if (state) {
+    void deletePanelMessage(state.message);
+  }
   guildContextPanels.delete(guildId);
+}
+
+async function deletePanelMessage(message: Message): Promise<void> {
+  try {
+    await message.delete();
+  } catch {
+    // Message may already be gone.
+  }
+}
+
+function resolvePanelChannel(
+  queue: GuildQueue,
+  previousMessage?: Message,
+): SendableChannels | null {
+  if (previousMessage?.channel?.isSendable()) {
+    return previousMessage.channel;
+  }
+  const metaChannel = queue.metadata?.channel;
+  if (metaChannel?.isSendable()) {
+    return metaChannel;
+  }
+  const requestMessage = queue.metadata?.requestMessage as Message | undefined;
+  if (requestMessage?.channel?.isSendable()) {
+    return requestMessage.channel;
+  }
+  return null;
+}
+
+/** Delete the previous panel (if any) and post a fresh one at the bottom of chat. */
+async function repostContextPanel(
+  queue: GuildQueue,
+  options: {
+    view?: ContextPanelView;
+    lyricsData?: MusicContextState["lyricsData"] | null;
+  } = {},
+): Promise<void> {
+  const guildId = queue.guild.id;
+  const previous = guildContextPanels.get(guildId);
+
+  if (previous) {
+    await deletePanelMessage(previous.message);
+  }
+
+  const view = options.view ?? previous?.currentView ?? "nowPlaying";
+  let lyricsData = previous?.lyricsData;
+  if (options.lyricsData !== undefined) {
+    lyricsData = options.lyricsData ?? undefined;
+  }
+
+  const channel = resolvePanelChannel(queue, previous?.message);
+  if (!channel) {
+    console.warn("[music] cannot post context panel — no sendable channel");
+    guildContextPanels.delete(guildId);
+    return;
+  }
+
+  const embed = resolvePanelEmbed(queue, view, lyricsData);
+  const components = createPanelComponents(guildId, view, !!lyricsData);
+  const previewContent = queueLinkPreviewContent(queue);
+
+  const panelMessage = await channel.send({
+    content: previewContent ?? "",
+    embeds: [embed],
+    components,
+  });
+
+  guildContextPanels.set(guildId, {
+    message: panelMessage,
+    currentView: view,
+    lyricsData,
+  });
 }
 
 function isPlaybackPaused(guildId: string): boolean {
@@ -270,129 +346,45 @@ function resolvePanelEmbed(
   }
 }
 
-/** Create or refresh the Now Playing panel when playback starts. */
+/** Post a fresh Now Playing panel when a track starts (replaces any prior panel). */
 export async function ensureNowPlayingPanel(queue: GuildQueue): Promise<void> {
-  const guildId = queue.guild.id;
-  if (guildContextPanels.has(guildId)) {
-    await updateContextPanel(queue, "nowPlaying");
-    return;
-  }
-
-  const requestMessage = queue.metadata?.requestMessage as Message | undefined;
-  if (requestMessage) {
-    await createOrUpdateContextPanel(requestMessage, queue, "nowPlaying");
-    return;
-  }
-
-  const channel = queue.metadata?.channel;
-  if (!channel?.isSendable()) {
-    console.warn("[music] cannot post now playing panel — no sendable channel");
-    return;
-  }
-
-  const embed = resolvePanelEmbed(queue, "nowPlaying");
-  const components = createPanelComponents(guildId, "nowPlaying", false);
-  const previewContent = queueLinkPreviewContent(queue);
-
-  const panelMessage = await channel.send({
-    content: previewContent,
-    embeds: [embed],
-    components,
-  });
-
-  guildContextPanels.set(guildId, {
-    message: panelMessage,
-    currentView: "nowPlaying",
-  });
+  await repostContextPanel(queue, { view: "nowPlaying", lyricsData: null });
 }
 
 export async function updateContextPanel(
   queue: GuildQueue,
   view?: ContextPanelView,
-  lyricsData?: { name: string; artistName: string; plainLyrics: string }
+  lyricsData?: { name: string; artistName: string; plainLyrics: string },
 ): Promise<void> {
   const guildId = queue.guild.id;
-  const state = guildContextPanels.get(guildId);
+  if (!guildContextPanels.has(guildId) && !view && !lyricsData) return;
 
-  if (!state) return;
-
-  if (view) {
-    state.currentView = view;
-  }
-
-  if (lyricsData) {
-    state.lyricsData = lyricsData;
-  }
-
-  const embed = resolvePanelEmbed(queue, state.currentView, state.lyricsData);
-  const components = createPanelComponents(
-    guildId,
-    state.currentView,
-    !!state.lyricsData,
-  );
-  const previewContent = queueLinkPreviewContent(queue);
-
-  try {
-    await state.message.edit({
-      content: previewContent ?? "",
-      embeds: [embed],
-      components,
-    });
-  } catch (error) {
-    console.error("Failed to update context panel:", error);
-    guildContextPanels.delete(guildId);
-  }
+  await repostContextPanel(queue, {
+    ...(view ? { view } : {}),
+    ...(lyricsData ? { lyricsData } : {}),
+  });
 }
 
 export async function createOrUpdateContextPanel(
   message: Message,
   queue: GuildQueue,
   view: ContextPanelView = "nowPlaying",
-  lyricsData?: { name: string; artistName: string; plainLyrics: string }
+  lyricsData?: { name: string; artistName: string; plainLyrics: string },
 ): Promise<Message> {
-  const guildId = queue.guild.id;
-  const existingState = guildContextPanels.get(guildId);
-
-  const embed = resolvePanelEmbed(
-    queue,
-    view,
-    lyricsData ?? existingState?.lyricsData,
-  );
-  const hasLyrics = !!lyricsData || !!existingState?.lyricsData;
-  const components = createPanelComponents(guildId, view, hasLyrics);
-  const previewContent = queueLinkPreviewContent(queue);
-
-  if (existingState) {
-    try {
-      existingState.currentView = view;
-      if (lyricsData) {
-        existingState.lyricsData = lyricsData;
-      }
-      await existingState.message.edit({
-        content: previewContent ?? "",
-        embeds: [embed],
-        components,
-      });
-      return existingState.message;
-    } catch (error) {
-      console.error("Failed to edit existing context panel, creating new one:", error);
-      guildContextPanels.delete(guildId);
-    }
+  if (!queue.metadata?.channel && message.channel.isSendable()) {
+    queue.metadata = { ...queue.metadata, channel: message.channel };
   }
 
-  const newMessage = await message.reply({
-    content: previewContent,
-    embeds: [embed],
-    components,
+  await repostContextPanel(queue, {
+    view,
+    ...(lyricsData ? { lyricsData } : {}),
   });
 
-  guildContextPanels.set(guildId, {
-    message: newMessage,
-    currentView: view,
-    lyricsData,
-  });
-
-  return newMessage;
+  const state = guildContextPanels.get(queue.guild.id);
+  if (!state) {
+    throw new Error("Failed to post music context panel.");
+  }
+  return state.message;
 }
 
 export async function handleContextPanelInteraction(
@@ -432,9 +424,9 @@ export async function handleContextPanelInteraction(
       });
       return;
     }
+    await interaction.deferUpdate();
     player.setPaused(!player.isPaused());
     await updateContextPanel(queue);
-    await interaction.deferUpdate();
     return;
   }
 
@@ -447,8 +439,8 @@ export async function handleContextPanelInteraction(
       });
       return;
     }
-    player.skip();
     await interaction.deferUpdate();
+    player.skip();
     return;
   }
 
@@ -468,7 +460,7 @@ export async function handleContextPanelInteraction(
       return;
     }
 
-    await updateContextPanel(queue, newView);
     await interaction.deferUpdate();
+    await updateContextPanel(queue, newView);
   }
 }

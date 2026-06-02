@@ -12,8 +12,8 @@ export const manageContactTool = new DynamicStructuredTool({
   name: "manageContact",
   description:
     "Add, remove, or update a known contact (name → Discord user ID) for this server. " +
-    "ONLY for Equality role, server admins, or bot owner. Use when they ask to add a person with an ID, remove a contact, " +
-    'or change a contact (e.g. "add person kevin with id 543923375438036993"). ' +
+    "ONLY for Equality role, server admins, or bot owner — always CALL this tool for add/remove/update; do not refuse in chat without calling it. " +
+    'Use when they ask to add a person with an ID (e.g. "add cameron 152569570396209162"), remove a contact, or update one. ' +
     "For add, both name and userId are required.",
   schema: z.object({
     action: z

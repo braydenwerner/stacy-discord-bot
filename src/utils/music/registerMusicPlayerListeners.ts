@@ -1,5 +1,6 @@
 import { EmbedBuilder, escapeMarkdown } from "@discordjs/builders";
 import type { Player } from "discord-player";
+import { updateContextPanel, clearContextPanel } from "./musicContextPanel";
 
 // https://github.com/Mirasaki/mirasaki-music-bot/blob/main/src/music-player.js
 
@@ -7,21 +8,11 @@ const EMBED_DESCRIPTION_MAX_LENGTH = 2048;
 
 export function registerMusicPlayerListeners(player: Player) {
   // this event is emitted whenever discord-player starts to play a track
-  player.events.on("playerStart", (queue, track) => {
+  player.events.on("playerStart", async (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    queue.metadata.channel.send({
-      embeds: [
-        new EmbedBuilder({
-          color: 1752220,
-          title: "Started Playing",
-          description: `[${escapeMarkdown(track.title)}](${track.url})`,
-          thumbnail: { url: track.thumbnail },
-          footer: {
-            text: `${track.duration} - by ${track.author}\nRequested by: ${queue.metadata.member?.user?.username}`,
-          },
-        }).setTimestamp(queue.metadata.timestamp),
-      ],
-    });
+    
+    // Update the unified context panel to show now playing
+    await updateContextPanel(queue, "nowPlaying");
   });
 
   player.events.on("error", (queue, error) => {
@@ -124,6 +115,9 @@ export function registerMusicPlayerListeners(player: Player) {
   player.events.on("disconnect", (queue) => {
     if (queue.metadata.disableEmbeds) return;
     // Emitted when the bot leaves the voice channel
+    // Clear the context panel reference since we're leaving
+    clearContextPanel(queue.guild.id);
+    
     queue.metadata.channel.send({
       embeds: [
         {

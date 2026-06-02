@@ -1,5 +1,11 @@
 import { displayNameForUserId } from "@/constants/people";
 import {
+  formatBulkGroupDiscordMessage,
+  resolveMemberHintsFromContext,
+} from "@/utils/bulkGroupMembers";
+import { parseMemberList } from "@/utils/parseMemberList";
+import type { MemberResolveContext } from "@/utils/resolveGroupMember";
+import {
   addMemberToGroup,
   deleteGroup,
   listGroups,
@@ -17,6 +23,22 @@ export default {
   data: new SlashCommandBuilder()
     .setName("group")
     .setDescription("Manage user groups (Equality role required)")
+    .addSubcommand((sub) =>
+      sub
+        .setName("create")
+        .setDescription("Create a group and add multiple members at once")
+        .addStringOption((opt) =>
+          opt.setName("name").setDescription("Group name").setRequired(true),
+        )
+        .addStringOption((opt) =>
+          opt
+            .setName("members")
+            .setDescription(
+              "Comma-separated names (contacts, me, @mentions, or user IDs)",
+            )
+            .setRequired(true),
+        ),
+    )
     .addSubcommand((sub) =>
       sub
         .setName("add-member")
@@ -81,6 +103,36 @@ export default {
     const sub = interaction.options.getSubcommand();
 
     try {
+      if (sub === "create") {
+        const name = interaction.options.getString("name", true);
+        const membersRaw = interaction.options.getString("members", true);
+        const ctx: MemberResolveContext = {
+          authorId: interaction.user.id,
+          guildId: interaction.guildId,
+          mentions: [],
+        };
+        const hints = parseMemberList(membersRaw);
+        const { resolved, failed } = resolveMemberHintsFromContext(ctx, hints);
+        let created = false;
+        for (const member of resolved) {
+          const result = addMemberToGroup(
+            interaction.guildId,
+            name,
+            member.userId,
+          );
+          if (result.created) created = true;
+        }
+        await interaction.reply({
+          content: formatBulkGroupDiscordMessage(name, {
+            created,
+            resolved,
+            failed,
+          }),
+          ephemeral: true,
+        });
+        return;
+      }
+
       if (sub === "add-member") {
         const name = interaction.options.getString("name", true);
         const user = interaction.options.getUser("user", true);

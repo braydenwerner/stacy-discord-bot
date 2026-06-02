@@ -15,10 +15,12 @@ import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { listContactsTool } from "@/tools/listContactsTool";
 import { listUserGroupsTool } from "@/tools/listUserGroupsTool";
 import { manageContactTool } from "@/tools/manageContactTool";
+import { createGroupTool } from "@/tools/createGroupTool";
 import { manageUserGroupTool } from "@/tools/manageUserGroupTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
+import { toolResultNeedsFollowUp } from "@/utils/toolResult";
 import { recordUsage } from "@/utils/tokenTracker";
 import { truncateMessage } from "@/utils/truncateMessage";
 import {
@@ -49,6 +51,7 @@ const tools: Record<string, DynamicStructuredTool> = {
   [lyricsTool.name]: lyricsTool,
   [sendMessageTool.name]: sendMessageTool,
   [manageContactTool.name]: manageContactTool,
+  [createGroupTool.name]: createGroupTool,
   [manageUserGroupTool.name]: manageUserGroupTool,
   [pingGroupTool.name]: pingGroupTool,
   [openPullRequestTool.name]: openPullRequestTool,
@@ -142,17 +145,20 @@ export default async function messageCreate(
             `[tool] success ${toolCall.name} (${Date.now() - start}ms, ${text.length} chars)`,
           );
         } else if (tools[toolCall.name]) {
-          // Inject the Discord message via runtime config so it never has to
-          // live in the tool's (token-costly) JSON schema.
-          await tools[toolCall.name].invoke(toolCall.args, {
+          const result = await tools[toolCall.name].invoke(toolCall.args, {
             configurable: { message },
           });
+          const text =
+            typeof result === "string" && result.length > 0
+              ? result
+              : "OK: Action completed.";
           messages.push(
-            new ToolMessage({ content: "Done.", tool_call_id: toolCallId }),
+            new ToolMessage({ content: text, tool_call_id: toolCallId }),
           );
           didAction = true;
+          if (toolResultNeedsFollowUp(text)) usedReadTool = true;
           console.log(
-            `[tool] success ${toolCall.name} (${Date.now() - start}ms)`,
+            `[tool] success ${toolCall.name} (${Date.now() - start}ms) result=${text.slice(0, 80)}`,
           );
         } else {
           console.warn(`[tool] unknown tool ${toolCall.name}`);

@@ -99,6 +99,12 @@ async function processQueue(): Promise<void> {
     stopTicker();
     await finalizeQueueCard(getQueueSnapshot());
   }
+  
+  // If new items were added to the queue during processing or cleanup,
+  // recursively call processQueue to handle them
+  if (queue.length > 0) {
+    void processQueue();
+  }
 }
 
 // Runs one PR end to end: launch cloud agent, poll to completion, report result.

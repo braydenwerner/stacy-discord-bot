@@ -1,6 +1,10 @@
 import type { PlaylistTrack } from "@/db/playlists";
 import { truncateMessage } from "@/utils/truncateMessage";
 import { QueryType, useMainPlayer } from "discord-player";
+import {
+  syncQueueRequestMetadata,
+  tagTracksWithRequest,
+} from "@/utils/music/requestChannel";
 import type {
   GuildMember,
   Message,
@@ -63,7 +67,13 @@ export async function playTrack(
     return false;
   }
 
-  const { track } = await player.play(voiceChannel, searchResult, {
+  tagTracksWithRequest(searchResult.tracks, ctx);
+  const existingQueue = player.nodes.get(voiceChannel.guild.id);
+  if (existingQueue) {
+    syncQueueRequestMetadata(existingQueue, ctx);
+  }
+
+  const { track, queue } = await player.play(voiceChannel, searchResult, {
     nodeOptions: {
       metadata: {
         channel: ctx.channel,
@@ -77,6 +87,9 @@ export async function playTrack(
     await ctx.reply("Failed to play song.");
     return false;
   }
+
+  syncQueueRequestMetadata(queue, ctx);
+  tagTracksWithRequest(searchResult.tracks, ctx);
 
   return true;
 }

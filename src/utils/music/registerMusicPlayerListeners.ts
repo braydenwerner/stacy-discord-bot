@@ -1,6 +1,7 @@
 import { escapeMarkdown } from "@discordjs/builders";
-import type { Player } from "discord-player";
+import type { GuildQueue, Player, Track } from "discord-player";
 import { trackEventPayload } from "@/utils/music/musicMessage";
+import { resolveMusicNotifyChannel } from "@/utils/music/requestChannel";
 import {
   ensureNowPlayingPanel,
   clearContextPanel,
@@ -9,6 +10,10 @@ import {
 // https://github.com/Mirasaki/mirasaki-music-bot/blob/main/src/music-player.js
 
 const EMBED_DESCRIPTION_MAX_LENGTH = 2048;
+
+function notifyChannel(queue: GuildQueue, track?: Track | null) {
+  return resolveMusicNotifyChannel(queue, track ?? queue.currentTrack);
+}
 
 export function registerMusicPlayerListeners(player: Player) {
   // this event is emitted whenever discord-player starts to play a track
@@ -20,8 +25,8 @@ export function registerMusicPlayerListeners(player: Player) {
 
   player.events.on("error", (queue, error) => {
     if (queue.metadata.disableEmbeds) return;
-    // Emitted when the player encounters an error
-    queue.metadata.channel.send({
+    const channel = notifyChannel(queue);
+    channel?.send({
       embeds: [
         {
           color: 1752220,
@@ -34,7 +39,7 @@ export function registerMusicPlayerListeners(player: Player) {
 
   player.events.on("playerError", (queue, err) => {
     console.error("[music] playerError:", err);
-    queue?.metadata?.channel?.send?.({
+    notifyChannel(queue)?.send({
       embeds: [
         {
           color: 0xff0000,
@@ -47,7 +52,8 @@ export function registerMusicPlayerListeners(player: Player) {
 
   player.events.on("audioTrackAdd", (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    queue.metadata.channel.send(
+    const channel = notifyChannel(queue, track);
+    channel?.send(
       trackEventPayload(track, {
         color: 1752220,
         title: "Track Enqueued",
@@ -61,7 +67,8 @@ export function registerMusicPlayerListeners(player: Player) {
     if (queue.metadata.disableEmbeds) return;
     const first = tracks[0];
     if (!first) return;
-    queue.metadata.channel.send(
+    const channel = notifyChannel(queue, first);
+    channel?.send(
       trackEventPayload(first, {
         color: 1752220,
         title: "Multiple Tracks Enqueued",
@@ -73,7 +80,8 @@ export function registerMusicPlayerListeners(player: Player) {
 
   player.events.on("audioTrackRemove", (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    queue.metadata.channel.send(
+    const channel = notifyChannel(queue, track);
+    channel?.send(
       trackEventPayload(track, {
         color: 1752220,
         title: "Track Removed",
@@ -87,7 +95,8 @@ export function registerMusicPlayerListeners(player: Player) {
     if (queue.metadata.disableEmbeds) return;
     const first = tracks[0];
     if (!first) return;
-    queue.metadata.channel.send(
+    const channel = notifyChannel(queue, first);
+    channel?.send(
       trackEventPayload(first, {
         color: 1752220,
         title: "Multiple Tracks Removed",
@@ -99,7 +108,8 @@ export function registerMusicPlayerListeners(player: Player) {
 
   player.events.on("playerSkip", (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    queue.metadata.channel.send(
+    const channel = notifyChannel(queue, track);
+    channel?.send(
       trackEventPayload(track, {
         color: 1752220,
         title: "Player Skip",
@@ -110,20 +120,7 @@ export function registerMusicPlayerListeners(player: Player) {
   });
 
   player.events.on("disconnect", (queue) => {
-    if (queue.metadata.disableEmbeds) return;
-    // Emitted when the bot leaves the voice channel
-    // Clear the context panel reference since we're leaving
     clearContextPanel(queue.guild.id);
-    
-    queue.metadata.channel.send({
-      embeds: [
-        {
-          color: 1752220,
-          title: "Finished Playing",
-          description: "Queue is now empty, leaving the channel",
-        },
-      ],
-    });
   });
 
   // player.events.on("emptyChannel", (queue) => {
@@ -149,20 +146,6 @@ export function registerMusicPlayerListeners(player: Player) {
   //   // Bot will automatically leave the voice channel with this event
   //   queue.metadata.channel.send(ctx);
   // });
-
-  player.events.on("emptyQueue", (queue) => {
-    if (queue.metadata.disableEmbeds) return;
-    // Emitted when the player queue has finished
-    queue.metadata.channel.send({
-      embeds: [
-        {
-          color: 1752220,
-          title: "Queue Empty",
-          description: `Queue is now empty, leaving channel if no songs are added/enqueued`,
-        },
-      ],
-    });
-  });
 
   if (process.env.DEBUG_ENABLED === "true") {
     player.on("debug", console.log);

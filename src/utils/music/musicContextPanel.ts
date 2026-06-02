@@ -12,6 +12,7 @@ import {
   escapeMarkdown,
 } from "discord.js";
 import { queueLinkPreviewContent } from "@/utils/music/musicMessage";
+import { resolveMusicNotifyChannel } from "@/utils/music/requestChannel";
 import { msToHumanReadableTime } from "@utils/util";
 
 type ContextPanelView = "nowPlaying" | "queue" | "lyrics";
@@ -49,22 +50,8 @@ async function deletePanelMessage(message: Message): Promise<void> {
   }
 }
 
-function resolvePanelChannel(
-  queue: GuildQueue,
-  previousMessage?: Message,
-): SendableChannels | null {
-  if (previousMessage?.channel?.isSendable()) {
-    return previousMessage.channel;
-  }
-  const metaChannel = queue.metadata?.channel;
-  if (metaChannel?.isSendable()) {
-    return metaChannel;
-  }
-  const requestMessage = queue.metadata?.requestMessage as Message | undefined;
-  if (requestMessage?.channel?.isSendable()) {
-    return requestMessage.channel;
-  }
-  return null;
+function resolvePanelChannel(queue: GuildQueue): SendableChannels | null {
+  return resolveMusicNotifyChannel(queue, queue.currentTrack);
 }
 
 /** Delete the previous panel (if any) and post a fresh one at the bottom of chat. */
@@ -88,7 +75,7 @@ async function repostContextPanel(
     lyricsData = options.lyricsData ?? undefined;
   }
 
-  const channel = resolvePanelChannel(queue, previous?.message);
+  const channel = resolvePanelChannel(queue);
   if (!channel) {
     console.warn("[music] cannot post context panel — no sendable channel");
     guildContextPanels.delete(guildId);
@@ -253,7 +240,10 @@ function createNowPlayingEmbed(queue: GuildQueue, guild: Guild): EmbedBuilder {
 
   embed.addFields(fields);
 
-  if (queue.metadata?.member?.user?.username) {
+  const requester = track.requestedBy;
+  if (requester?.username) {
+    embed.setFooter({ text: `Requested by ${requester.username}` });
+  } else if (queue.metadata?.member?.user?.username) {
     embed.setFooter({ text: `Requested by ${queue.metadata.member.user.username}` });
   }
 

@@ -11,6 +11,7 @@ import {
   getTrackFromPlaylist,
   pickRandomTrackFromPlaylist,
 } from "@/db/playlists";
+import { buildLyricsSearchQuery } from "@/utils/music/currentTrack";
 import { queueEmbedResponse } from "../utils/music/musicUtil";
 import { createOrUpdateContextPanel } from "../utils/music/musicContextPanel";
 import {
@@ -214,13 +215,19 @@ export const viewSongQueueTool = new DynamicStructuredTool({
 
 export const lyricsTool = new DynamicStructuredTool({
   name: "lyrics",
-  description: "Gets the lyrics for a song.",
+  description:
+    "Gets lyrics for a song. Omit songName and artist to use the track currently playing in this server.",
   schema: z.object({
     songName: z
       .string()
       .optional()
-      .describe("The name of the song to get lyrics for."),
-    artist: z.string().optional().describe("The artist of the song."),
+      .describe(
+        "Song title. Omit when the user wants lyrics for whatever is playing now.",
+      ),
+    artist: z
+      .string()
+      .optional()
+      .describe("Artist name. Omit with songName to default to now playing."),
   }),
   func: async ({ songName, artist }, _runManager, config) => {
     const message = getMessage(config);
@@ -229,12 +236,15 @@ export const lyricsTool = new DynamicStructuredTool({
 
       if (!message?.guild?.id) throw new Error("No guild found.");
 
-      const query =
-        useQueue(message.guild.id)?.currentTrack?.title ??
-        `${songName} ${artist ? `by ${artist}` : ""}`;
+      const query = buildLyricsSearchQuery(message.guild.id, {
+        songName,
+        artist,
+      });
       if (!query) {
         message.reply(
-          truncateMessage(`${emojis.error} ${message.member}, please provide a query, currently playing song can only be used when playback is active - this command has been cancelled`),
+          truncateMessage(
+            `${emojis.error} ${message.member}, nothing is playing right now — name a song or start playback first.`,
+          ),
         );
         return "";
       }

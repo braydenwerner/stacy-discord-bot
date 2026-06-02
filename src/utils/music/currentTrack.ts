@@ -22,6 +22,27 @@ export function getCurrentTrackForGuild(
   };
 }
 
+/** Lyrics search string: explicit song/artist, else the guild's now-playing track. */
+export function buildLyricsSearchQuery(
+  guildId: string | null | undefined,
+  input?: { songName?: string; artist?: string },
+): string | null {
+  const songName = input?.songName?.trim();
+  const artist = input?.artist?.trim();
+  if (songName || artist) {
+    return `${songName ?? ""}${artist ? ` by ${artist}` : ""}`.trim();
+  }
+
+  if (!guildId) return null;
+
+  const current = useQueue(guildId)?.currentTrack;
+  const title = current?.title?.trim();
+  if (!title) return null;
+
+  const trackArtist = current?.author?.trim();
+  return trackArtist ? `${title} by ${trackArtist}` : title;
+}
+
 export function defaultTrackLabelFromTitle(title: string): string {
   const label = title.trim().slice(0, 48);
   return label || "track";

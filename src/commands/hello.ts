@@ -1,6 +1,6 @@
-import { QueryType, useMainPlayer } from "discord-player";
+import { playHelloClip } from "@/utils/music/playHelloClip";
 import {
-  CommandInteraction,
+  ChatInputCommandInteraction,
   GuildMember,
   SlashCommandBuilder,
 } from "discord.js";
@@ -9,40 +9,39 @@ export default {
   data: new SlashCommandBuilder()
     .setName("hello")
     .setDescription("Stacy joins the call to say hi"),
-  async execute(interaction: CommandInteraction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     try {
       const member = interaction.member as GuildMember;
-      const voiceChannel = member?.voice?.channel?.id;
+      const voiceChannel = member?.voice?.channel;
       if (!voiceChannel) {
-        interaction.reply(
-          "Hello! It's nice to meet you. How can I help you today?",
-        );
+        await interaction.reply({
+          content:
+            "Hello! It's nice to meet you. Join a voice channel if you want me to say hi there.",
+        });
         return;
       }
 
-      interaction.deferReply();
-
-      if (!interaction.guildId) throw new Error("Guild ID not found.");
-      if (!interaction.guild?.voiceAdapterCreator)
+      if (!interaction.guild?.voiceAdapterCreator) {
         throw new Error("Voice adapter creator not found.");
+      }
 
-      const player = useMainPlayer();
-      player?.play(voiceChannel, "audio/hey_boys.mp3", {
-        searchEngine: QueryType.FILE,
-        nodeOptions: {
-          metadata: {
-            // this is important for the event listeners
-            channel: interaction.channel,
-            member: interaction.member,
-            disableEmbeds: true,
-          },
-        },
+      await interaction.deferReply();
+      await playHelloClip({
+        voiceChannel,
+        textChannel: interaction.channel,
+        member,
       });
-
-      interaction.deleteReply();
+      await interaction.deleteReply();
     } catch (error) {
-      console.error(`Error: ${error}`);
-      interaction.reply(`Failed to say hello. ${error}`);
+      console.error("[hello]", error);
+      const content = `Failed to say hello. ${error}`;
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content }).catch(() =>
+          interaction.followUp({ content, ephemeral: true }),
+        );
+      } else {
+        await interaction.reply({ content, ephemeral: true });
+      }
     }
   },
 };

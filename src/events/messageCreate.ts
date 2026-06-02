@@ -22,6 +22,10 @@ import { manageUserGroupTool } from "@/tools/manageUserGroupTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
+import {
+  isClearContextMessage,
+  replyClearContext,
+} from "@/utils/clearContext";
 import { toolResultNeedsFollowUp } from "@/utils/toolResult";
 import { recordUsage } from "@/utils/tokenTracker";
 import { truncateMessage } from "@/utils/truncateMessage";
@@ -85,6 +89,11 @@ export default async function messageCreate(
     message.author.bot ||
     (!message.content.toUpperCase().includes("STACY") && !isReplyToStacy)
   ) {
+    return;
+  }
+
+  if (isClearContextMessage(message.content)) {
+    await replyClearContext(message);
     return;
   }
 

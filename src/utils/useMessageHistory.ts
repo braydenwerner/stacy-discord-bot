@@ -11,10 +11,9 @@ import { manageUserGroupTool } from "@/tools/manageUserGroupTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
-import { getHistory, recordTurn } from "@/db/messageHistory";
 import { ChatOpenAI } from "@langchain/openai";
 
-export { getHistory, recordTurn };
+export { clearMessageHistory, getHistory, recordTurn } from "@/db/messageHistory";
 
 export const llm = new ChatOpenAI({
   model: "gpt-4.1",

@@ -61,3 +61,11 @@ export function recordTurn(
   insert.run(sessionId, "ai", stacyText);
   pruneMessages().run(sessionId, sessionId, MAX_HISTORY_MESSAGES);
 }
+
+/** Remove all stored turns for this user (per-author session id). */
+export function clearMessageHistory(sessionId: string): number {
+  const result = getDb()
+    .prepare("DELETE FROM message_history WHERE session_id = ?")
+    .run(sessionId);
+  return Number(result.changes);
+}

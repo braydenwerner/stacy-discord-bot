@@ -66,6 +66,11 @@ Stacy only processes a message when:
 
 Recent conversation (last **10** text turns per Discord user) is loaded from SQLite and saved after each reply.
 
+Clear it anytime:
+
+- Chat: `stacy clear my context` (also `reset my context`, `forget this conversation`, `clear your memory`)
+- Slash: `/context clear` (ephemeral)
+
 ## Personal playlists
 
 Each Discord user has their own playlists in SQLite. **You can only read or change your own** (slash commands and tools always use the message author’s ID).
@@ -215,6 +220,7 @@ Deploy with `pnpm run deployCommands`.
 
 | Command | Access | Subcommands / notes |
 |---------|--------|---------------------|
+| `/context` | You only | `clear` — wipe your stored chat history with Stacy |
 | `/hello` | Everyone | Join voice and play a short hello clip (if in VC) |
 | `/play` | Everyone | Stub (“in progress”) |
 | `/playlist` | You only | See table below |

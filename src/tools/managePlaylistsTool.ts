@@ -15,6 +15,10 @@ import {
   playlistsSummaryForModel,
 } from "@/utils/directoryEmbeds";
 import { getToolMessage } from "@/utils/getToolMessage";
+import {
+  defaultTrackLabelFromTitle,
+  resolveTrackAddFromInput,
+} from "@/utils/music/currentTrack";
 import { toolError, toolOk } from "@/utils/toolResult";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
@@ -23,9 +27,11 @@ export const managePlaylistsTool = new DynamicStructuredTool({
   name: "managePlaylists",
   description:
     "Manage the message author's personal music playlists and tracks. Each user only their own data. " +
-    "Playlists are named collections; each track has a short label plus title/artist/URL. " +
-    "Use create_playlist, delete_playlist, rename_playlist, list_playlists for playlists; " +
-    "add_track, remove_track, update_track, list_tracks for songs inside a playlist.",
+    "Playlists are named collections; each track has a short label plus a saved URL for exact replay. " +
+    "For add_track when the user says add this song / currently playing: set playlist only (optional trackName) " +
+    "and omit title/url — saves the guild's now-playing track using its URL. " +
+    "Use create_playlist, delete_playlist, rename_playlist, list_playlists; " +
+    "add_track, remove_track, update_track, list_tracks for tracks.",
   schema: z.object({
     action: z
       .enum([
@@ -51,9 +57,17 @@ export const managePlaylistsTool = new DynamicStructuredTool({
       .string()
       .optional()
       .describe("New playlist name when renaming."),
-    title: z.string().optional().describe("Song title for search/playback."),
+    title: z
+      .string()
+      .optional()
+      .describe("Display title when url is set. Omit with url to use now playing."),
     artist: z.string().optional().describe("Artist (optional)."),
-    url: z.string().optional().describe("Direct http(s) link."),
+    url: z
+      .string()
+      .optional()
+      .describe(
+        "http(s) URL for replay. Omit title and url to save now playing (uses its URL).",
+      ),
     newName: z
       .string()
       .optional()
@@ -139,20 +153,31 @@ export const managePlaylistsTool = new DynamicStructuredTool({
         );
       }
 
+      if (action === "add_track") {
+        const resolved = resolveTrackAddFromInput(message.guildId, {
+          title,
+          artist,
+          url,
+        });
+        const label =
+          trackName?.trim() || defaultTrackLabelFromTitle(resolved.title);
+        addTrackToPlaylist(userId, playlist, label, {
+          title: resolved.title,
+          artist: resolved.artist,
+          url: resolved.url,
+        });
+        await message.reply(
+          `Added **${label}** to **${playlist.trim()}** — [${resolved.title}](${resolved.url})`,
+        );
+        return toolOk(
+          `Added "${label}" to playlist "${playlist.trim()}" with URL.`,
+        );
+      }
+
       if (!trackName?.trim()) {
         const text = "Track name is required.";
         await message.reply(text);
         return toolError(text);
-      }
-
-      if (action === "add_track") {
-        addTrackToPlaylist(userId, playlist, trackName, { title, artist, url });
-        await message.reply(
-          `Added **${trackName.trim()}** to playlist **${playlist.trim()}**.`,
-        );
-        return toolOk(
-          `Added "${trackName.trim()}" to playlist "${playlist.trim()}".`,
-        );
       }
 
       if (action === "remove_track") {

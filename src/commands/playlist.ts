@@ -15,6 +15,10 @@ import {
   buildPlaylistsEmbed,
 } from "@/utils/directoryEmbeds";
 import {
+  defaultTrackLabelFromTitle,
+  resolveTrackAddFromInput,
+} from "@/utils/music/currentTrack";
+import {
   playTargetFromPlaylistTrack,
   playTrack,
 } from "@/utils/music/playTrack";
@@ -77,24 +81,29 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("add")
-        .setDescription("Add a track to a playlist")
+        .setDescription(
+          "Add a track (omit title/url to save now playing with its URL)",
+        )
         .addStringOption((opt) =>
           opt.setName("playlist").setDescription("Playlist name").setRequired(true),
         )
         .addStringOption((opt) =>
           opt
             .setName("track")
-            .setDescription("Short label for this track")
-            .setRequired(true),
+            .setDescription("Short label (defaults to song title if omitted)"),
         )
         .addStringOption((opt) =>
-          opt.setName("title").setDescription("Song title"),
+          opt
+            .setName("title")
+            .setDescription("Display title when url is set"),
         )
         .addStringOption((opt) =>
           opt.setName("artist").setDescription("Artist (optional)"),
         )
         .addStringOption((opt) =>
-          opt.setName("url").setDescription("Direct http(s) link"),
+          opt
+            .setName("url")
+            .setDescription("http(s) URL — omit with title to use now playing"),
         ),
     )
     .addSubcommand((sub) =>
@@ -211,20 +220,24 @@ export default {
 
       if (sub === "add") {
         const playlist = interaction.options.getString("playlist", true);
-        const track = interaction.options.getString("track", true);
+        const track = interaction.options.getString("track") ?? undefined;
         const title = interaction.options.getString("title") ?? undefined;
         const artist = interaction.options.getString("artist") ?? undefined;
         const url = interaction.options.getString("url") ?? undefined;
-        if (!title?.trim() && !url?.trim()) {
-          await replyDenied(
-            interaction,
-            "Provide a **title** or **url** for the track.",
-          );
-          return;
-        }
-        addTrackToPlaylist(userId, playlist, track, { title, artist, url });
+        const resolved = resolveTrackAddFromInput(interaction.guildId, {
+          title,
+          artist,
+          url,
+        });
+        const label =
+          track?.trim() || defaultTrackLabelFromTitle(resolved.title);
+        addTrackToPlaylist(userId, playlist, label, {
+          title: resolved.title,
+          artist: resolved.artist,
+          url: resolved.url,
+        });
         await interaction.reply({
-          content: `Added **${track.trim()}** to **${playlist.trim()}**.`,
+          content: `Added **${label}** to **${playlist.trim()}** — [${resolved.title}](${resolved.url})`,
           ephemeral: true,
         });
         return;

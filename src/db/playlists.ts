@@ -71,12 +71,12 @@ function assertUrl(url: string): void {
 }
 
 function assertPlaybackTarget(data: {
-  title?: string;
-  artist?: string;
-  url?: string;
+  title?: string | null;
+  artist?: string | null;
+  url?: string | null;
 }): void {
-  if (!data.title?.trim() && !data.url?.trim()) {
-    throw new Error("Provide a song title or URL.");
+  if (!data.url?.trim() && !data.title?.trim()) {
+    throw new Error("Provide a song URL or title.");
   }
 }
 
@@ -215,10 +215,13 @@ export function addTrackToPlaylist(
 
   const normalized = normalizeName(trackName);
   const displayName = trackName.trim();
+  const url = data.url?.trim() || null;
   const title = data.title?.trim() || null;
   const artist = data.artist?.trim() || null;
-  const url = data.url?.trim() || null;
-  if (url) assertUrl(url);
+  if (!url) {
+    throw new Error("A track URL is required so playback can replay the same source.");
+  }
+  assertUrl(url);
 
   try {
     getDb()
@@ -316,8 +319,8 @@ export function updateTrackInPlaylist(
     updates.url !== undefined ? updates.url.trim() || null : existing.url;
 
   if (nextUrl) assertUrl(nextUrl);
-  if (!nextTitle && !nextUrl) {
-    throw new Error("A track must have a title or URL.");
+  if (!nextUrl) {
+    throw new Error("A track must keep a URL so playback can replay the same source.");
   }
 
   try {

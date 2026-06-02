@@ -78,10 +78,9 @@ Each Discord user has their own playlists in SQLite. **You can only read or chan
 
 ### Track shape
 
-Each track has a short **label** (unique within a playlist) plus either:
+Each track has a short **label** (unique within a playlist), a display **title**, optional **artist**, and a saved **url** (http/https). Playback always uses the **URL** so the same source replays reliably.
 
-- **title** (+ optional **artist**) for YouTube search at playback, or  
-- **url** (http/https) for direct playback
+**Add what's playing:** omit title/url on `add_track` or `/playlist add` — Stacy saves the guild's now-playing track and its URL (e.g. “add this to party” or `/playlist add playlist:party`).
 
 ### Playback
 
@@ -235,7 +234,7 @@ Deploy with `pnpm run deployCommands`.
 | `rename` | Rename a playlist (**not** Favorites) |
 | `list` | All your playlists + track counts (includes Favorites) |
 | `tracks` | List tracks in one playlist |
-| `add` | Add track (`playlist`, `track`, `title` and/or `url`, optional `artist`) |
+| `add` | Add track (`playlist`, optional `track` label); omit `title`/`url` to save **now playing** (uses its URL) |
 | `remove` | Remove track by label |
 | `update` | Change track label or song fields |
 | `play` | Play from playlist; **omit `track` for random** |

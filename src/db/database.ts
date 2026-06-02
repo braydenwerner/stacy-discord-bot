@@ -1,3 +1,4 @@
+import { seedDefaultContacts } from "@/db/contacts";
 import { runMigrations } from "@/db/migrations";
 import fs from "node:fs";
 import path from "node:path";
@@ -24,6 +25,10 @@ export function initDatabase(
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
   runMigrations(db);
+
+  if (process.env.GUILD_ID) {
+    seedDefaultContacts(process.env.GUILD_ID);
+  }
 
   console.log(`[db] opened ${dbPath}`);
   return db;

@@ -11,7 +11,8 @@ export const sendMessageTool = new DynamicStructuredTool({
     "ONLY use this when the user explicitly asks to send, tell, relay, or deliver a message TO someone " +
     '(e.g. "send ben this", "tell michael that", "ping will and ryley about ..."). ' +
     "Do NOT use it just because a name appears in the message. " +
-    "Known people: will, michael (use 'michael f' for Michael F., otherwise it defaults to Michael D.), aaron, ben, ryley, brayden, kevin.",
+    "Known people are stored per server in the contacts database (use listContacts to see them). " +
+    "For michael, use 'michael f' for Michael F.; otherwise 'michael' defaults to Michael D.",
   schema: z.object({
     names: z
       .array(z.string())
@@ -27,7 +28,7 @@ export const sendMessageTool = new DynamicStructuredTool({
       const ids: string[] = [];
       const unknown: string[] = [];
       for (const name of names) {
-        const id = resolveUserId(name);
+        const id = resolveUserId(name, message.guildId);
         if (id) {
           if (!ids.includes(id)) ids.push(id);
         } else {

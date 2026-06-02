@@ -21,6 +21,37 @@ const MIGRATIONS: string[] = [
     );
     INSERT OR IGNORE INTO token_totals (id) VALUES (1);
   `,
+  `
+    CREATE TABLE IF NOT EXISTS user_groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (guild_id, name)
+    );
+    CREATE TABLE IF NOT EXISTS group_members (
+      group_id INTEGER NOT NULL REFERENCES user_groups (id) ON DELETE CASCADE,
+      user_id TEXT NOT NULL,
+      added_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (group_id, user_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_group_members_group_id
+      ON group_members (group_id);
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      guild_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (guild_id, name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_contacts_guild_id
+      ON contacts (guild_id);
+  `,
 ];
 
 export function runMigrations(db: DatabaseSync): void {

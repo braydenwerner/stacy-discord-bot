@@ -12,6 +12,10 @@ import {
 // import { playSongTool } from "@/tools/playSongTool";
 import { fetchPageTool } from "@/tools/fetchPageTool";
 import { openPullRequestTool } from "@/tools/openPullRequestTool";
+import { listContactsTool } from "@/tools/listContactsTool";
+import { listUserGroupsTool } from "@/tools/listUserGroupsTool";
+import { manageContactTool } from "@/tools/manageContactTool";
+import { manageUserGroupTool } from "@/tools/manageUserGroupTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
 import { webSearchTool } from "@/tools/webSearchTool";
@@ -44,6 +48,8 @@ const tools: Record<string, DynamicStructuredTool> = {
   [viewSongQueueTool.name]: viewSongQueueTool,
   [lyricsTool.name]: lyricsTool,
   [sendMessageTool.name]: sendMessageTool,
+  [manageContactTool.name]: manageContactTool,
+  [manageUserGroupTool.name]: manageUserGroupTool,
   [pingGroupTool.name]: pingGroupTool,
   [openPullRequestTool.name]: openPullRequestTool,
 };
@@ -52,6 +58,8 @@ const tools: Record<string, DynamicStructuredTool> = {
 const readTools: Record<string, DynamicStructuredTool> = {
   [webSearchTool.name]: webSearchTool,
   [fetchPageTool.name]: fetchPageTool,
+  [listContactsTool.name]: listContactsTool,
+  [listUserGroupsTool.name]: listUserGroupsTool,
 };
 
 export default async function messageCreate(

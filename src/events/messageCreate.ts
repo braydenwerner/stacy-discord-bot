@@ -11,6 +11,12 @@ import {
 } from "@/tools/musicPlayerTools";
 // import { playSongTool } from "@/tools/playSongTool";
 import { fetchPageTool } from "@/tools/fetchPageTool";
+import {
+  addUserToGroupTool,
+  deleteGroupTool,
+  listGroupsTool,
+  removeUserFromGroupTool,
+} from "@/tools/groupManagementTools";
 import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { pingGroupTool } from "@/tools/pingGroupTool";
 import { sendMessageTool } from "@/tools/sendMessageTool";
@@ -45,6 +51,10 @@ const tools: Record<string, DynamicStructuredTool> = {
   [lyricsTool.name]: lyricsTool,
   [sendMessageTool.name]: sendMessageTool,
   [pingGroupTool.name]: pingGroupTool,
+  [addUserToGroupTool.name]: addUserToGroupTool,
+  [removeUserFromGroupTool.name]: removeUserFromGroupTool,
+  [listGroupsTool.name]: listGroupsTool,
+  [deleteGroupTool.name]: deleteGroupTool,
   [openPullRequestTool.name]: openPullRequestTool,
 };
 

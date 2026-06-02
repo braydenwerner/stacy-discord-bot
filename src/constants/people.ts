@@ -14,16 +14,6 @@ export const USER_IDS: Record<string, string> = {
   kevin: "543923375438036993",
 };
 
-// Named groups -> member ids.
-export const GROUPS: Record<string, string[]> = {
-  "baldurs gate": [
-    USER_IDS.ben,
-    USER_IDS.ryley,
-    USER_IDS.aaron,
-    USER_IDS.brayden,
-  ],
-};
-
 function normalize(value: string): string {
   return value
     .toLowerCase()
@@ -44,16 +34,4 @@ export function resolveUserId(rawName: string): string | undefined {
     return second?.startsWith("f") ? USER_IDS["michael f"] : DEFAULT_USER_ID;
   }
   return USER_IDS[first];
-}
-
-// Case-insensitive group lookup (ignores a trailing "group").
-export function resolveGroupIds(rawGroup: string): string[] | undefined {
-  const key = normalize(rawGroup)
-    .replace(/\bgroup\b/g, "")
-    .trim();
-  if (GROUPS[key]) return GROUPS[key];
-  for (const name of Object.keys(GROUPS)) {
-    if (key.includes(name)) return GROUPS[name];
-  }
-  return undefined;
 }

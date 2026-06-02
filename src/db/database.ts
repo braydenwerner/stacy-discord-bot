@@ -1,5 +1,6 @@
 import { seedDefaultContacts } from "@/db/contacts";
 import { seedDefaultNiceList } from "@/db/niceList";
+import { migrateFavoriteSongsToPlaylists } from "@/db/playlists";
 import { runMigrations } from "@/db/migrations";
 import fs from "node:fs";
 import path from "node:path";
@@ -26,6 +27,7 @@ export function initDatabase(
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
   runMigrations(db);
+  migrateFavoriteSongsToPlaylists();
   seedDefaultNiceList();
 
   if (process.env.GUILD_ID) {

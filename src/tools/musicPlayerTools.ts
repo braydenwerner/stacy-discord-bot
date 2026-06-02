@@ -7,8 +7,18 @@ import { QueryType, useMainPlayer, usePlayer, useQueue } from "discord-player";
 import { EmbedBuilder, Message } from "discord.js";
 import { z } from "zod";
 
+import {
+  getTrackFromPlaylist,
+  pickRandomTrackFromPlaylist,
+} from "@/db/playlists";
 import { queueEmbedResponse } from "../utils/music/musicUtil";
 import { createOrUpdateContextPanel } from "../utils/music/musicContextPanel";
+import {
+  playContextFromMessage,
+  playTargetFromPlaylistTrack,
+  playTrack,
+  type PlayTarget,
+} from "../utils/music/playTrack";
 
 // const lyricsExtractor = lyricsExtractorSuper();
 
@@ -26,50 +36,72 @@ const playMusicSchema = z.object({
   songName: z.string().optional().describe("The name of the song to play."),
   artist: z.string().optional().describe("The artist of the song."),
   url: z.string().optional().describe("The URL of the song."),
+  playlist: z
+    .string()
+    .optional()
+    .describe(
+      "Name of one of the requester's personal playlists to play from.",
+    ),
+  trackName: z
+    .string()
+    .optional()
+    .describe(
+      "Short label of a track on that playlist. Omit with playlist set to pick a random track.",
+    ),
 });
 
 export const playSongTool = new DynamicStructuredTool({
   name: "playSong",
-  description: "Plays a song. ONLY PROVIDE A URL IF GIVEN.",
+  description:
+    "Plays a song. ONLY PROVIDE A URL IF GIVEN. " +
+    "Use playlist (+ optional trackName) to play from the requester's saved playlists; random if trackName omitted.",
   schema: playMusicSchema,
-  func: async ({ songName, artist, url }, _runManager, config) => {
+  func: async (
+    { songName, artist, url, playlist, trackName },
+    _runManager,
+    config,
+  ) => {
     const message = getMessage(config);
     try {
-      const player = useMainPlayer();
-      const voiceChannel = message.member?.voice.channel;
+      const ctx = playContextFromMessage(message);
+      let target: PlayTarget = { url, songName, artist };
+      let playLabel: string | undefined;
+      let playPlaylist: string | undefined;
 
-      if (!voiceChannel) {
-        message.reply(truncateMessage("You need to be in a voice channel to play music!"));
-        return "";
+      if (playlist?.trim()) {
+        const playlistLabel = playlist.trim();
+        playPlaylist = playlistLabel;
+        const track = trackName?.trim()
+          ? getTrackFromPlaylist(
+              message.author.id,
+              playlistLabel,
+              trackName,
+            )
+          : pickRandomTrackFromPlaylist(message.author.id, playlistLabel);
+
+        if (!track) {
+          await ctx.reply(
+            trackName?.trim()
+              ? `**${trackName.trim()}** isn't on playlist **${playlistLabel}**.`
+              : `Playlist **${playlistLabel}** is empty or doesn't exist.`,
+          );
+          return "";
+        }
+        target = playTargetFromPlaylistTrack(track);
+        playLabel = track.name;
       }
 
-      const query = `${songName} ${artist ? `by ${artist}` : ""}`;
-      console.log("query: ", url || query);
-      const searchResult = await player.search(url || query, {
-        searchEngine: url
-          ? QueryType.AUTO
-          : QueryType.YOUTUBE_SEARCH,
-        fallbackSearchEngine: QueryType.YOUTUBE_SEARCH,
-        requestedBy: message.member.user,
-      });
-      console.log("searchResult: ", searchResult?.tracks?.[0]?.url ?? searchResult);
+      const query = target.url || `${target.songName ?? ""} ${target.artist ? `by ${target.artist}` : ""}`.trim();
+      console.log("query: ", query);
 
-      if (!searchResult?.tracks?.length) {
-        message.reply(truncateMessage("Couldn't find that song."));
-        return "";
+      const ok = await playTrack(ctx, target);
+      if (ok && playLabel && playPlaylist) {
+        await message.reply(
+          truncateMessage(
+            `Playing **${playLabel}** from playlist **${playPlaylist}**.`,
+          ),
+        );
       }
-
-      const { track } = await player.play(voiceChannel, searchResult, {
-        nodeOptions: {
-          metadata: {
-            channel: message.channel,
-            member: message.member,
-            requestMessage: message,
-          },
-        },
-      });
-
-      if (!track) throw new Error("Failed to play song.");
     } catch (error) {
       message.reply(truncateMessage(`Failed to play song. ${error}`));
       throw error;

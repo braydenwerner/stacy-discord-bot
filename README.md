@@ -105,7 +105,7 @@ These are registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and i
 
 | Tool | Parameters | What it does |
 |------|------------|--------------|
-| `playSong` | `songName?`, `artist?`, `url?` | Search/play in the user’s voice channel; shows Now Playing panel |
+| `playSong` | `songName?`, `artist?`, `url?`, `playlist?`, `trackName?` | Search/play in voice; `playlist` (+ optional `trackName`) plays from saved playlists (random if track omitted) |
 | `pauseOrResumeSong` | — | Toggle pause |
 | `skipSong` | — | Skip current track |
 | `viewSongQueue` | — | Post queue in the music context panel |
@@ -117,6 +117,12 @@ These are registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and i
 | Tool | Parameters | What it does |
 |------|------------|--------------|
 | `sendMessage` | `names[]`, `text` | `@mention` known **contacts** by name in the current channel (only when the user explicitly asks to tell/send someone something) |
+
+#### Playlists — **your lists only**
+
+| Tool | Parameters | What it does |
+|------|------------|--------------|
+| `managePlaylists` | `action`: playlist CRUD + `add_track` / `remove_track` / `update_track` / `list_tracks`, `playlist?`, `trackName?`, `title?`, `artist?`, `url?`, etc. | Manage personal playlists and tracks (always the message author) |
 
 #### Contacts — **Equality** role
 
@@ -169,6 +175,7 @@ Deploy with `pnpm run deployCommands`. Current commands:
 |---------|--------|-------------|
 | `/hello` | Everyone | Join voice and play a short hello clip (if in VC) |
 | `/play` | Everyone | Stub (“in progress”) |
+| `/playlist` | You only | `create`, `delete`, `rename`, `list`, `tracks`, `add`, `remove`, `update`, `play` |
 | `/people` | Equality | List contacts (embed) |
 | `/contact` | Equality | `add`, `remove`, `update` contacts |
 | `/group` | Equality | `create`, `add-member`, `remove-member`, `delete`, `list`, `ping` |
@@ -187,6 +194,7 @@ Default database: `data/stacy.db` (gitignored).
 | `contacts` | Guild-scoped name → Discord user ID |
 | `user_groups` / `group_members` | Named ping groups |
 | `nice_list_users` | Who gets the nice tone (seeded on first run if empty) |
+| `playlists` / `playlist_tracks` | Per-user named playlists and saved tracks |
 
 Migrations run automatically on startup (`src/db/migrations.ts`).
 

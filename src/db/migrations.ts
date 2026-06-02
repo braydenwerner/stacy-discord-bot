@@ -58,6 +58,46 @@ const MIGRATIONS: string[] = [
       added_at INTEGER NOT NULL DEFAULT (unixepoch())
     );
   `,
+  `
+    CREATE TABLE IF NOT EXISTS favorite_songs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      title TEXT,
+      artist TEXT,
+      url TEXT,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (user_id, name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_favorite_songs_user_id
+      ON favorite_songs (user_id);
+  `,
+  `
+    CREATE TABLE IF NOT EXISTS playlists (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (user_id, name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_playlists_user_id ON playlists (user_id);
+
+    CREATE TABLE IF NOT EXISTS playlist_tracks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      playlist_id INTEGER NOT NULL REFERENCES playlists (id) ON DELETE CASCADE,
+      name TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      title TEXT,
+      artist TEXT,
+      url TEXT,
+      created_at INTEGER NOT NULL DEFAULT (unixepoch()),
+      UNIQUE (playlist_id, name)
+    );
+    CREATE INDEX IF NOT EXISTS idx_playlist_tracks_playlist_id
+      ON playlist_tracks (playlist_id);
+  `,
 ];
 
 export function runMigrations(db: DatabaseSync): void {

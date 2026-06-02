@@ -11,6 +11,7 @@ import {
 } from "@/tools/musicPlayerTools";
 // import { playSongTool } from "@/tools/playSongTool";
 import { fetchPageTool } from "@/tools/fetchPageTool";
+import { managePlaylistsTool } from "@/tools/managePlaylistsTool";
 import { manageToneListTool } from "@/tools/manageToneListTool";
 import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { listContactsTool } from "@/tools/listContactsTool";
@@ -58,6 +59,7 @@ const tools: Record<string, DynamicStructuredTool> = {
   [listUserGroupsTool.name]: listUserGroupsTool,
   [pingGroupTool.name]: pingGroupTool,
   [manageToneListTool.name]: manageToneListTool,
+  [managePlaylistsTool.name]: managePlaylistsTool,
   [openPullRequestTool.name]: openPullRequestTool,
 };
 

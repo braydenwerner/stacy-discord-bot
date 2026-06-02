@@ -1,4 +1,9 @@
 import type { Contact } from "@/db/contacts";
+import {
+  type PlaylistSummary,
+  type PlaylistTrack,
+  describePlaylistTrack,
+} from "@/db/playlists";
 import type { UserGroupSummary } from "@/db/userGroups";
 import { displayNameForUserId } from "@/constants/people";
 import { EMBED_DESCRIPTION_MAX_LENGTH } from "@/constants/constants";
@@ -146,4 +151,89 @@ export function buildNiceListEmbed(userIds: string[]): EmbedBuilder {
 export function niceListSummaryForModel(count: number): string {
   if (count === 0) return "Nice list is empty; everyone gets snarky tone.";
   return `Listed ${count} user${count === 1 ? "" : "s"} on the nice list.`;
+}
+
+export function buildPlaylistsEmbed(
+  playlists: PlaylistSummary[],
+  userTag?: string,
+): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(0xe91e63)
+    .setTitle("📁 Your Playlists")
+    .setTimestamp();
+
+  if (userTag) embed.setAuthor({ name: userTag });
+
+  if (playlists.length === 0) {
+    embed.setDescription(
+      "No playlists yet.\nUse `/playlist create` or ask Stacy to create one.",
+    );
+    return embed;
+  }
+
+  const lines = playlists.map(
+    (p) =>
+      `**${p.name}** — ${p.trackCount} track${p.trackCount === 1 ? "" : "s"}`,
+  );
+  embed.setDescription(
+    `**${playlists.length}** playlist${playlists.length === 1 ? "" : "s"} (only you can edit them)\n\n${lines.join("\n")}`,
+  );
+  embed.setFooter({ text: "Use /playlist tracks <name> to see songs" });
+  return embed;
+}
+
+export function buildPlaylistTracksEmbed(
+  playlistName: string,
+  tracks: PlaylistTrack[],
+  userTag?: string,
+): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(0xe91e63)
+    .setTitle(`🎵 ${playlistName}`)
+    .setTimestamp();
+
+  if (userTag) embed.setAuthor({ name: userTag });
+
+  if (tracks.length === 0) {
+    embed.setDescription(
+      "This playlist is empty.\nUse `/playlist add` to save a track.",
+    );
+    return embed;
+  }
+
+  const lines = tracks.map(
+    (t) => `**${t.name}**\n${describePlaylistTrack(t)}`,
+  );
+  const body = lines.join("\n\n");
+
+  if (body.length <= EMBED_DESCRIPTION_MAX_LENGTH) {
+    embed.setDescription(
+      `**${tracks.length}** track${tracks.length === 1 ? "" : "s"}\n\n${body}`,
+    );
+    return embed;
+  }
+
+  const fields = tracks.slice(0, 25).map((t) => ({
+    name: t.name,
+    value: clampFieldValue(describePlaylistTrack(t)),
+    inline: false,
+  }));
+  embed.addFields(fields);
+  if (tracks.length > 25) {
+    embed.setFooter({ text: `Showing 25 of ${tracks.length} tracks` });
+  }
+  return embed;
+}
+
+export function playlistsSummaryForModel(count: number): string {
+  if (count === 0) return "You have no playlists.";
+  return `Listed ${count} playlist${count === 1 ? "" : "s"} in an embed.`;
+}
+
+export function playlistTracksSummaryForModel(
+  playlistName: string,
+  count: number,
+): string {
+  if (count === 0) return `Playlist "${playlistName}" is empty.`;
+  return `Listed ${count} track${count === 1 ? "" : "s"} in playlist "${playlistName}".`;
 }

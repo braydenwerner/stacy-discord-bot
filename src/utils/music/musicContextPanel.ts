@@ -1,7 +1,9 @@
-import { GuildQueue, Track } from "discord-player";
+import { GuildQueue } from "discord-player";
+import { usePlayer } from "discord-player";
 import {
   ActionRowBuilder,
   ButtonBuilder,
+  ButtonInteraction,
   ButtonStyle,
   EmbedBuilder,
   Message,
@@ -34,20 +36,33 @@ export function clearContextPanel(guildId: string): void {
   guildContextPanels.delete(guildId);
 }
 
-function createButtons(currentView: ContextPanelView, hasLyrics: boolean): ActionRowBuilder<ButtonBuilder> {
+function isPlaybackPaused(guildId: string): boolean {
+  const player = usePlayer(guildId);
+  return player?.isPaused() ?? false;
+}
+
+/** Top row: view tabs (active tab uses Primary / blurple). */
+function createTabRow(
+  currentView: ContextPanelView,
+  hasLyrics: boolean,
+): ActionRowBuilder<ButtonBuilder> {
   const row = new ActionRowBuilder<ButtonBuilder>();
 
   row.addComponents(
     new ButtonBuilder()
       .setCustomId("music_view_nowplaying")
       .setLabel("Now Playing")
-      .setStyle(currentView === "nowPlaying" ? ButtonStyle.Primary : ButtonStyle.Secondary)
-      .setEmoji("▶️"),
+      .setStyle(
+        currentView === "nowPlaying"
+          ? ButtonStyle.Primary
+          : ButtonStyle.Secondary,
+      ),
     new ButtonBuilder()
       .setCustomId("music_view_queue")
       .setLabel("Queue")
-      .setStyle(currentView === "queue" ? ButtonStyle.Primary : ButtonStyle.Secondary)
-      .setEmoji("📜"),
+      .setStyle(
+        currentView === "queue" ? ButtonStyle.Primary : ButtonStyle.Secondary,
+      ),
   );
 
   if (hasLyrics) {
@@ -55,12 +70,30 @@ function createButtons(currentView: ContextPanelView, hasLyrics: boolean): Actio
       new ButtonBuilder()
         .setCustomId("music_view_lyrics")
         .setLabel("Lyrics")
-        .setStyle(currentView === "lyrics" ? ButtonStyle.Primary : ButtonStyle.Secondary)
-        .setEmoji("📝"),
+        .setStyle(
+          currentView === "lyrics" ? ButtonStyle.Primary : ButtonStyle.Secondary,
+        ),
     );
   }
 
+  return row;
+}
+
+/** Second row: playback controls (separate from tabs). */
+function createControlRow(isPaused: boolean): ActionRowBuilder<ButtonBuilder> {
+  const row = new ActionRowBuilder<ButtonBuilder>();
+
   row.addComponents(
+    new ButtonBuilder()
+      .setCustomId("music_pause")
+      .setLabel(isPaused ? "Resume" : "Pause")
+      .setStyle(isPaused ? ButtonStyle.Success : ButtonStyle.Secondary)
+      .setEmoji(isPaused ? "▶️" : "⏸️"),
+    new ButtonBuilder()
+      .setCustomId("music_skip")
+      .setLabel("Skip")
+      .setStyle(ButtonStyle.Secondary)
+      .setEmoji("⏭️"),
     new ButtonBuilder()
       .setCustomId("music_dismiss")
       .setLabel("Dismiss")
@@ -69,6 +102,17 @@ function createButtons(currentView: ContextPanelView, hasLyrics: boolean): Actio
   );
 
   return row;
+}
+
+function createPanelComponents(
+  guildId: string,
+  currentView: ContextPanelView,
+  hasLyrics: boolean,
+): ActionRowBuilder<ButtonBuilder>[] {
+  return [
+    createTabRow(currentView, hasLyrics),
+    createControlRow(isPlaybackPaused(guildId)),
+  ];
 }
 
 function createNowPlayingEmbed(queue: GuildQueue, guild: Guild): EmbedBuilder {
@@ -247,13 +291,13 @@ export async function ensureNowPlayingPanel(queue: GuildQueue): Promise<void> {
   }
 
   const embed = resolvePanelEmbed(queue, "nowPlaying");
-  const buttons = createButtons("nowPlaying", false);
+  const components = createPanelComponents(guildId, "nowPlaying", false);
   const previewContent = queueLinkPreviewContent(queue);
 
   const panelMessage = await channel.send({
     content: previewContent,
     embeds: [embed],
-    components: [buttons],
+    components,
   });
 
   guildContextPanels.set(guildId, {
@@ -281,14 +325,18 @@ export async function updateContextPanel(
   }
 
   const embed = resolvePanelEmbed(queue, state.currentView, state.lyricsData);
-  const buttons = createButtons(state.currentView, !!state.lyricsData);
+  const components = createPanelComponents(
+    guildId,
+    state.currentView,
+    !!state.lyricsData,
+  );
   const previewContent = queueLinkPreviewContent(queue);
 
   try {
     await state.message.edit({
       content: previewContent ?? "",
       embeds: [embed],
-      components: [buttons],
+      components,
     });
   } catch (error) {
     console.error("Failed to update context panel:", error);
@@ -310,7 +358,8 @@ export async function createOrUpdateContextPanel(
     view,
     lyricsData ?? existingState?.lyricsData,
   );
-  const buttons = createButtons(view, !!lyricsData || !!existingState?.lyricsData);
+  const hasLyrics = !!lyricsData || !!existingState?.lyricsData;
+  const components = createPanelComponents(guildId, view, hasLyrics);
   const previewContent = queueLinkPreviewContent(queue);
 
   if (existingState) {
@@ -322,7 +371,7 @@ export async function createOrUpdateContextPanel(
       await existingState.message.edit({
         content: previewContent ?? "",
         embeds: [embed],
-        components: [buttons],
+        components,
       });
       return existingState.message;
     } catch (error) {
@@ -334,7 +383,7 @@ export async function createOrUpdateContextPanel(
   const newMessage = await message.reply({
     content: previewContent,
     embeds: [embed],
-    components: [buttons],
+    components,
   });
 
   guildContextPanels.set(guildId, {
@@ -347,10 +396,12 @@ export async function createOrUpdateContextPanel(
 }
 
 export async function handleContextPanelInteraction(
-  interaction: any,
-  queue: GuildQueue
+  interaction: ButtonInteraction,
+  queue: GuildQueue,
 ): Promise<void> {
   const guildId = interaction.guildId;
+  if (!guildId) return;
+
   const state = guildContextPanels.get(guildId);
 
   if (!state) {
@@ -369,6 +420,35 @@ export async function handleContextPanelInteraction(
     } catch (error) {
       console.error("Failed to dismiss context panel:", error);
     }
+    return;
+  }
+
+  if (interaction.customId === "music_pause") {
+    const player = usePlayer(guildId);
+    if (!player) {
+      await interaction.reply({
+        content: "No active player found.",
+        ephemeral: true,
+      });
+      return;
+    }
+    player.setPaused(!player.isPaused());
+    await updateContextPanel(queue);
+    await interaction.deferUpdate();
+    return;
+  }
+
+  if (interaction.customId === "music_skip") {
+    const player = usePlayer(guildId);
+    if (!player) {
+      await interaction.reply({
+        content: "No active player found.",
+        ephemeral: true,
+      });
+      return;
+    }
+    player.skip();
+    await interaction.deferUpdate();
     return;
   }
 

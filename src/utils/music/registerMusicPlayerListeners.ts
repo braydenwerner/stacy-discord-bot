@@ -1,5 +1,6 @@
-import { EmbedBuilder, escapeMarkdown } from "@discordjs/builders";
+import { escapeMarkdown } from "@discordjs/builders";
 import type { Player } from "discord-player";
+import { trackEventPayload } from "@/utils/music/musicMessage";
 import { updateContextPanel, clearContextPanel } from "./musicContextPanel";
 
 // https://github.com/Mirasaki/mirasaki-music-bot/blob/main/src/music-player.js
@@ -44,72 +45,66 @@ export function registerMusicPlayerListeners(player: Player) {
 
   player.events.on("audioTrackAdd", (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    // Emitted when the player adds a single song to its queue
-    queue.metadata.channel.send({
-      embeds: [
-        {
-          color: 1752220,
-          title: "Track Enqueued",
-          description: `[${escapeMarkdown(track.title)}](${track.url})`,
-        },
-      ],
-    });
+    queue.metadata.channel.send(
+      trackEventPayload(track, {
+        color: 1752220,
+        title: "Track Enqueued",
+        description: `[${escapeMarkdown(track.title)}](${track.url})`,
+        url: track.url,
+      }),
+    );
   });
 
   player.events.on("audioTracksAdd", (queue, tracks) => {
     if (queue.metadata.disableEmbeds) return;
-    // Emitted when the player adds multiple songs to its queue
-    queue.metadata.channel.send({
-      embeds: [
-        {
-          color: 1752220,
-          title: "Multiple Tracks Enqueued",
-          description: `**${tracks.length}** Tracks\nFirst entry: [${escapeMarkdown(tracks[1].title)}](${tracks[1].url})`,
-        },
-      ],
-    });
+    const first = tracks[0];
+    if (!first) return;
+    queue.metadata.channel.send(
+      trackEventPayload(first, {
+        color: 1752220,
+        title: "Multiple Tracks Enqueued",
+        description: `**${tracks.length}** Tracks\nFirst entry: [${escapeMarkdown(first.title)}](${first.url})`,
+        url: first.url,
+      }),
+    );
   });
 
   player.events.on("audioTrackRemove", (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    // Emitted when the player adds multiple songs to its queue
-    queue.metadata.channel.send({
-      embeds: [
-        {
-          color: 1752220,
-          title: "Track Removed",
-          description: `[${escapeMarkdown(track.title)}](${track.url})`,
-        },
-      ],
-    });
+    queue.metadata.channel.send(
+      trackEventPayload(track, {
+        color: 1752220,
+        title: "Track Removed",
+        description: `[${escapeMarkdown(track.title)}](${track.url})`,
+        url: track.url,
+      }),
+    );
   });
 
   player.events.on("audioTracksRemove", (queue, tracks) => {
     if (queue.metadata.disableEmbeds) return;
-    // Emitted when the player adds multiple songs to its queue
-    queue.metadata.channel.send({
-      embeds: [
-        {
-          color: 1752220,
-          title: "Multiple Tracks Removed",
-          description: `**${tracks.length}** Tracks\nFirst entry: [${escapeMarkdown(tracks[0].title)}](${tracks[0].url})`,
-        },
-      ],
-    });
+    const first = tracks[0];
+    if (!first) return;
+    queue.metadata.channel.send(
+      trackEventPayload(first, {
+        color: 1752220,
+        title: "Multiple Tracks Removed",
+        description: `**${tracks.length}** Tracks\nFirst entry: [${escapeMarkdown(first.title)}](${first.url})`,
+        url: first.url,
+      }),
+    );
   });
 
   player.events.on("playerSkip", (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    // Emitted when the audio player fails to load the stream for a song
-    queue.metadata.channel.send({
-      embeds: [
-        {
-          color: 1752220,
-          title: "Player Skip",
-          description: `Track skipped because the audio stream couldn't be extracted: [${escapeMarkdown(track.title)}](${track.url})`,
-        },
-      ],
-    });
+    queue.metadata.channel.send(
+      trackEventPayload(track, {
+        color: 1752220,
+        title: "Player Skip",
+        description: `Track skipped because the audio stream couldn't be extracted: [${escapeMarkdown(track.title)}](${track.url})`,
+        url: track.url,
+      }),
+    );
   });
 
   player.events.on("disconnect", (queue) => {

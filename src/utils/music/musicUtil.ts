@@ -3,6 +3,7 @@
 import { GuildQueue, QueueRepeatMode, Track } from "discord-player";
 import { EmbedBuilder, Guild, Message } from "discord.js";
 
+import { queueLinkPreviewContent } from "@/utils/music/musicMessage";
 import { msToHumanReadableTime } from "@utils/util";
 
 const repeatModeEmojiStr = (repeatMode: QueueRepeatMode) =>
@@ -69,8 +70,9 @@ export function queueEmbedResponse(
 
   const usableEmbeds = queueEmbeds(queue, guild, title);
 
-  // Queue empty
-  if (usableEmbeds.length === 0)
+  const previewContent = queueLinkPreviewContent(queue);
+
+  if (usableEmbeds.length === 0) {
     message.reply({
       embeds: [
         new EmbedBuilder()
@@ -82,9 +84,13 @@ export function queueEmbedResponse(
           .setDescription(`${title} is currently empty`),
       ],
     });
-  // Reply to the interaction with the SINGLE embed
-  else if (usableEmbeds.length === 1)
-    message.reply({ embeds: usableEmbeds }).catch(() => {
-      /* Void */
-    });
+  } else if (usableEmbeds.length === 1) {
+    const embed = usableEmbeds[0]!;
+    if (queue.currentTrack?.url) embed.setURL(queue.currentTrack.url);
+    message
+      .reply({ content: previewContent, embeds: [embed] })
+      .catch(() => {
+        /* Void */
+      });
+  }
 }

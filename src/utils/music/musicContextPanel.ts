@@ -8,6 +8,7 @@ import {
   Guild,
   escapeMarkdown,
 } from "discord.js";
+import { queueLinkPreviewContent } from "@/utils/music/musicMessage";
 import { msToHumanReadableTime } from "@utils/util";
 
 type ContextPanelView = "nowPlaying" | "queue" | "lyrics";
@@ -87,6 +88,7 @@ function createNowPlayingEmbed(queue: GuildQueue, guild: Guild): EmbedBuilder {
   const embed = new EmbedBuilder()
     .setColor(1752220)
     .setTitle("🎵 Now Playing")
+    .setURL(track.url)
     .setDescription(`[${escapeMarkdown(track.title)}](${track.url})`)
     .setThumbnail(track.thumbnail)
     .setAuthor({
@@ -243,9 +245,11 @@ export async function updateContextPanel(
   }
 
   const buttons = createButtons(state.currentView, !!state.lyricsData);
+  const previewContent = queueLinkPreviewContent(queue);
 
   try {
     await state.message.edit({
+      content: previewContent ?? "",
       embeds: [embed],
       components: [buttons],
     });
@@ -283,6 +287,7 @@ export async function createOrUpdateContextPanel(
   }
 
   const buttons = createButtons(view, !!lyricsData || !!existingState?.lyricsData);
+  const previewContent = queueLinkPreviewContent(queue);
 
   if (existingState) {
     try {
@@ -291,6 +296,7 @@ export async function createOrUpdateContextPanel(
         existingState.lyricsData = lyricsData;
       }
       await existingState.message.edit({
+        content: previewContent ?? "",
         embeds: [embed],
         components: [buttons],
       });
@@ -302,6 +308,7 @@ export async function createOrUpdateContextPanel(
   }
 
   const newMessage = await message.reply({
+    content: previewContent,
     embeds: [embed],
     components: [buttons],
   });

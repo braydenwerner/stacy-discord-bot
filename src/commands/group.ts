@@ -1,4 +1,5 @@
 import { displayNameForUserId } from "@/constants/people";
+import { buildGroupsEmbed } from "@/utils/directoryEmbeds";
 import {
   formatBulkGroupDiscordMessage,
   resolveMemberHintsFromContext,
@@ -183,27 +184,10 @@ export default {
 
       if (sub === "list") {
         const groups = listGroups(interaction.guildId);
-        if (groups.length === 0) {
-          await interaction.reply({
-            content: "No user groups exist yet.",
-            ephemeral: true,
-          });
-          return;
-        }
-        const body = groups
-          .map((group) => {
-            const members =
-              group.memberIds.length === 0
-                ? "(empty)"
-                : group.memberIds
-                    .map((id) =>
-                      displayNameForUserId(id, interaction.guildId),
-                    )
-                    .join(", ");
-            return `**${group.name}**: ${members}`;
-          })
-          .join("\n");
-        await interaction.reply({ content: body, ephemeral: true });
+        await interaction.reply({
+          embeds: [buildGroupsEmbed(groups, interaction.guildId, interaction.guild)],
+          ephemeral: true,
+        });
         return;
       }
 

@@ -1,6 +1,6 @@
 import { listContacts } from "@/db/contacts";
+import { buildContactsEmbed } from "@/utils/directoryEmbeds";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
-import { formatContactsList } from "@/utils/formatContactsList";
 import { replyDenied, replyError } from "@/utils/slashReply";
 import {
   ChatInputCommandInteraction,
@@ -21,10 +21,8 @@ export default {
 
     try {
       const contacts = listContacts(interaction.guildId);
-      await interaction.reply({
-        content: formatContactsList(contacts),
-        ephemeral: true,
-      });
+      const embed = buildContactsEmbed(contacts, interaction.guild);
+      await interaction.reply({ embeds: [embed], ephemeral: true });
     } catch (error) {
       await replyError(interaction, error);
     }

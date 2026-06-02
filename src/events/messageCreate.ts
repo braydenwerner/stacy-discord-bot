@@ -53,6 +53,8 @@ const tools: Record<string, DynamicStructuredTool> = {
   [manageContactTool.name]: manageContactTool,
   [createGroupTool.name]: createGroupTool,
   [manageUserGroupTool.name]: manageUserGroupTool,
+  [listContactsTool.name]: listContactsTool,
+  [listUserGroupsTool.name]: listUserGroupsTool,
   [pingGroupTool.name]: pingGroupTool,
   [openPullRequestTool.name]: openPullRequestTool,
 };
@@ -61,8 +63,6 @@ const tools: Record<string, DynamicStructuredTool> = {
 const readTools: Record<string, DynamicStructuredTool> = {
   [webSearchTool.name]: webSearchTool,
   [fetchPageTool.name]: fetchPageTool,
-  [listContactsTool.name]: listContactsTool,
-  [listUserGroupsTool.name]: listUserGroupsTool,
 };
 
 export default async function messageCreate(

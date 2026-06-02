@@ -1,36 +1,31 @@
 import { listGroups } from "@/db/userGroups";
-import { displayNameForUserId } from "@/constants/people";
+import {
+  buildGroupsEmbed,
+  groupsSummaryForModel,
+} from "@/utils/directoryEmbeds";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
+import { toolError, toolOk } from "@/utils/toolResult";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 
 export const listUserGroupsTool = new DynamicStructuredTool({
   name: "listUserGroups",
   description:
-    "List all user groups and their members for this server. " +
+    "List all user groups and their members in a rich embed. " +
     "ONLY for Equality role users. Use when they ask to show, list, or see existing groups.",
   schema: z.object({}),
   func: async (_args, _runManager, config) => {
     const message = getToolMessage(config);
     const denied = await requireEquality(message);
-    if (denied) return denied;
-
-    const groups = listGroups(message.guildId);
-    if (groups.length === 0) {
-      return "No user groups exist yet.";
+    if (denied) {
+      await message.reply({ content: denied });
+      return toolError(denied);
     }
 
-    return groups
-      .map((group) => {
-        const members =
-          group.memberIds.length === 0
-            ? "(empty)"
-            : group.memberIds
-                .map((id) => displayNameForUserId(id, message.guildId))
-                .join(", ");
-        return `**${group.name}**: ${members}`;
-      })
-      .join("\n");
+    const groups = listGroups(message.guildId);
+    const embed = buildGroupsEmbed(groups, message.guildId, message.guild);
+    await message.reply({ embeds: [embed] });
+    return toolOk(groupsSummaryForModel(groups.length));
   },
 });

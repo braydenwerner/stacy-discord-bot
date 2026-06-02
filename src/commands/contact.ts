@@ -4,7 +4,7 @@ import {
   removeContact,
   updateContact,
 } from "@/db/contacts";
-import { formatContactsList } from "@/utils/formatContactsList";
+import { buildContactsEmbed } from "@/utils/directoryEmbeds";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
 import { replyDenied, replyError } from "@/utils/slashReply";
 import {
@@ -122,7 +122,7 @@ export default {
       if (sub === "list") {
         const contacts = listContacts(interaction.guildId);
         await interaction.reply({
-          content: formatContactsList(contacts),
+          embeds: [buildContactsEmbed(contacts, interaction.guild)],
           ephemeral: true,
         });
       }

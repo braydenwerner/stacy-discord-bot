@@ -4,6 +4,7 @@ import {
   removeContact,
   updateContact,
 } from "@/db/contacts";
+import { formatContactsList } from "@/utils/formatContactsList";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
 import { replyDenied, replyError } from "@/utils/slashReply";
 import {
@@ -120,17 +121,10 @@ export default {
 
       if (sub === "list") {
         const contacts = listContacts(interaction.guildId);
-        if (contacts.length === 0) {
-          await interaction.reply({
-            content: "No contacts are stored for this server yet.",
-            ephemeral: true,
-          });
-          return;
-        }
-        const body = contacts
-          .map((c) => `**${c.name}**: <@${c.userId}> (\`${c.userId}\`)`)
-          .join("\n");
-        await interaction.reply({ content: body, ephemeral: true });
+        await interaction.reply({
+          content: formatContactsList(contacts),
+          ephemeral: true,
+        });
       }
     } catch (error) {
       await replyError(interaction, error);

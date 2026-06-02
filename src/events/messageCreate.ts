@@ -132,7 +132,10 @@ export default async function messageCreate(
 
       try {
         if (readTools[toolCall.name]) {
-          const result = await readTools[toolCall.name].invoke(toolCall);
+          const result = await readTools[toolCall.name].invoke(
+            toolCall.args ?? {},
+            { configurable: { message } },
+          );
           const text =
             typeof result === "string"
               ? result

@@ -13,7 +13,7 @@ export const listUserGroupsTool = new DynamicStructuredTool({
   name: "listUserGroups",
   description:
     "List all user groups and their members in a rich embed. " +
-    "ONLY for Equality role users. Use when they ask to show, list, or see existing groups.",
+    "ONLY for Equality role, server admins, or bot owner. Use when they ask to show, list, or see existing groups.",
   schema: z.object({}),
   func: async (_args, _runManager, config) => {
     const message = getToolMessage(config);

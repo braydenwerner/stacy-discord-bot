@@ -13,7 +13,7 @@ export const createGroupTool = new DynamicStructuredTool({
   name: "createGroup",
   description:
     "Create a user group and add multiple members in one step. " +
-    "ONLY for Equality role users. Prefer this over multiple manageUserGroup calls when " +
+    "ONLY for Equality role, server admins, or bot owner. Prefer this over multiple manageUserGroup calls when " +
     'creating a group with several people (e.g. "create cs2 with me, will, ryley, and kevin"). ' +
     "The name me refers to the person who sent the message.",
   schema: z.object({

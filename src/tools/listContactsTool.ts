@@ -13,7 +13,7 @@ export const listContactsTool = new DynamicStructuredTool({
   name: "listContacts",
   description:
     "List all known contacts for this server in a rich embed. " +
-    "ONLY for Equality role users. Use when they ask to show or list known people/contacts (same as /people).",
+    "ONLY for Equality role, server admins, or bot owner. Use when they ask to show or list known people/contacts (same as /people).",
   schema: z.object({}),
   func: async (_args, _runManager, config) => {
     const message = getToolMessage(config);

@@ -223,7 +223,7 @@ Deploy with `pnpm run deployCommands`.
 | `/group` | Equality | `create`, `add-member`, `remove-member`, `delete`, `list`, `ping` |
 | `/tone` | Bot owner | `nice-add`, `nice-remove`, `snarky-add` (alias for remove), `list` |
 
-**Equality** = Discord role named `Equality` (case-insensitive).
+**Directory admin** (contacts, groups, `/people`): **Equality** role, Discord **Administrator** or **Manage Server** permission, or bot owner (`STACY_OWNER_ID`).
 
 ### `/playlist` subcommands
 

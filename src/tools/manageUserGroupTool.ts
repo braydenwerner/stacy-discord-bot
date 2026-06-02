@@ -15,7 +15,7 @@ export const manageUserGroupTool = new DynamicStructuredTool({
   name: "manageUserGroup",
   description:
     "Add or remove one person from a user group, or delete a group. " +
-    "ONLY for Equality role users. For multiple members at once, use createGroup instead. " +
+    "ONLY for Equality role, server admins, or bot owner. For multiple members at once, use createGroup instead. " +
     '"me" refers to the person who sent the message.',
   schema: z.object({
     action: z

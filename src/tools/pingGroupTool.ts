@@ -8,7 +8,7 @@ export const pingGroupTool = new DynamicStructuredTool({
   name: "pingGroup",
   description:
     "Ping (mention) everyone in a user group and send them a message. " +
-    "ONLY for Equality role users. Use when they ask to send or ping a group " +
+    "ONLY for Equality role, server admins, or bot owner. Use when they ask to send or ping a group " +
     '(e.g. "send hey guys! to cs2", "ping the baldurs gate group"). ' +
     "Groups are stored in the database and managed with manageUserGroup / listUserGroups.",
   schema: z.object({

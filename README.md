@@ -62,8 +62,6 @@ Stacy only processes a message when:
 - **Default is snarky.** Users are only nice after the bot owner adds them (`/tone nice-add` or `manageToneList` / `nice_add`).
 - Music, playlists, and most action tools still run for everyone; tone only affects how Stacy *words* replies.
 - The model is instructed never to reveal that tone depends on who is talking.
-- On first run with an empty nice list, a small seed set is inserted (see `src/constants/defaultNiceList.ts`).
-
 Recent conversation (last **10** text turns per Discord user) is loaded from SQLite and saved after each reply.
 
 Clear it anytime:
@@ -257,7 +255,7 @@ Default database: `data/stacy.db` (gitignored).
 | `token_totals` | Cumulative API token usage |
 | `contacts` | Guild-scoped name → Discord user ID |
 | `user_groups` / `group_members` | Named ping groups |
-| `nice_list_users` | Who gets the nice tone (seeded on first run if empty) |
+| `nice_list_users` | Who gets the nice tone |
 | `playlists` | Per-user playlist names (`favorites` = default **Favorites**) |
 | `playlist_tracks` | Tracks inside each playlist |
 

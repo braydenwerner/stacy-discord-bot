@@ -1,5 +1,3 @@
-import { seedDefaultContacts } from "@/db/contacts";
-import { seedDefaultNiceList } from "@/db/niceList";
 import { migrateFavoriteSongsToPlaylists } from "@/db/playlists";
 import { runMigrations } from "@/db/migrations";
 import fs from "node:fs";
@@ -28,11 +26,6 @@ export function initDatabase(
   db.exec("PRAGMA foreign_keys = ON");
   runMigrations(db);
   migrateFavoriteSongsToPlaylists();
-  seedDefaultNiceList();
-
-  if (process.env.GUILD_ID) {
-    seedDefaultContacts(process.env.GUILD_ID);
-  }
 
   console.log(`[db] opened ${dbPath}`);
   return db;

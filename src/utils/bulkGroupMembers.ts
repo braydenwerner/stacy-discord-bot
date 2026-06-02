@@ -1,4 +1,4 @@
-import { displayNameForUserId } from "@/constants/people";
+import { getDisplayNameForUserId } from "@/db/contacts";
 import { addMemberToGroup } from "@/db/userGroups";
 import { parseMemberList } from "@/utils/parseMemberList";
 import {
@@ -35,7 +35,7 @@ export function resolveMemberHintsFromContext(
     resolved.push({
       hint,
       userId,
-      label: displayNameForUserId(userId, ctx.guildId),
+      label: getDisplayNameForUserId(ctx.guildId, userId),
     });
   }
 

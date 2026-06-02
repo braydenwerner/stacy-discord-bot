@@ -1,4 +1,4 @@
-import { displayNameForUserId } from "@/constants/people";
+import { getDisplayNameForUserId } from "@/db/contacts";
 import { buildGroupsEmbed } from "@/utils/directoryEmbeds";
 import {
   formatBulkGroupDiscordMessage,
@@ -142,7 +142,7 @@ export default {
           name,
           user.id,
         );
-        const label = displayNameForUserId(user.id, interaction.guildId);
+        const label = getDisplayNameForUserId(interaction.guildId, user.id);
         await interaction.reply({
           content: created
             ? `Created **${name.trim()}** and added **${label}**.`
@@ -160,7 +160,7 @@ export default {
           name,
           user.id,
         );
-        const label = displayNameForUserId(user.id, interaction.guildId);
+        const label = getDisplayNameForUserId(interaction.guildId, user.id);
         await interaction.reply({
           content: removed
             ? `Removed **${label}** from **${name.trim()}**.`

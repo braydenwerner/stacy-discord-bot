@@ -1,4 +1,4 @@
-import { resolveUserId } from "@/constants/people";
+import { resolveContactUserId } from "@/db/contacts";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { truncateMessage } from "@/utils/truncateMessage";
 import { DynamicStructuredTool } from "@langchain/core/tools";
@@ -12,7 +12,7 @@ export const sendMessageTool = new DynamicStructuredTool({
     '(e.g. "send ben this", "tell michael that", "ping will and ryley about ..."). ' +
     "Do NOT use it just because a name appears in the message. " +
     "Known people are stored per server in the contacts database (use listContacts to see them). " +
-    "For michael, use 'michael f' for Michael F.; otherwise 'michael' defaults to Michael D.",
+    "Use the exact contact name when multiple exist (e.g. michael f vs michael d).",
   schema: z.object({
     names: z
       .array(z.string())
@@ -28,7 +28,7 @@ export const sendMessageTool = new DynamicStructuredTool({
       const ids: string[] = [];
       const unknown: string[] = [];
       for (const name of names) {
-        const id = resolveUserId(name, message.guildId);
+        const id = resolveContactUserId(message.guildId, name);
         if (id) {
           if (!ids.includes(id)) ids.push(id);
         } else {

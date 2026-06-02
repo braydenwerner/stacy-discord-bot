@@ -3,7 +3,7 @@ import {
   deleteGroup,
   removeMemberFromGroup,
 } from "@/db/userGroups";
-import { displayNameForUserId } from "@/constants/people";
+import { getDisplayNameForUserId } from "@/db/contacts";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { resolveGroupMemberId } from "@/utils/resolveGroupMember";
@@ -54,7 +54,7 @@ export const manageUserGroupTool = new DynamicStructuredTool({
         return toolError(text);
       }
 
-      const label = displayNameForUserId(userId, message.guildId);
+      const label = getDisplayNameForUserId(message.guildId, userId);
 
       if (action === "add") {
         const { created } = addMemberToGroup(message.guildId, group, userId);

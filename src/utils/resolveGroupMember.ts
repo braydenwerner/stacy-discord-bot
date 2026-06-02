@@ -1,4 +1,4 @@
-import { resolveUserId } from "@/constants/people";
+import { resolveContactUserId } from "@/db/contacts";
 import type { Message, User } from "discord.js";
 
 export type MemberResolveContext = {
@@ -31,7 +31,7 @@ export function resolveGroupMemberFromContext(
 
   if (/^\d{17,20}$/.test(stripped)) return stripped;
 
-  const fromContacts = resolveUserId(stripped, ctx.guildId);
+  const fromContacts = resolveContactUserId(ctx.guildId, stripped);
   if (fromContacts) return fromContacts;
 
   for (const user of ctx.mentions) {

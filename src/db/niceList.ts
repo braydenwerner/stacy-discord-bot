@@ -1,19 +1,4 @@
-import { DEFAULT_NICE_LIST_USER_IDS } from "@/constants/defaultNiceList";
 import { getDb } from "@/db/database";
-
-export function seedDefaultNiceList(): void {
-  const count = getDb()
-    .prepare("SELECT COUNT(*) AS n FROM nice_list_users")
-    .get() as { n: number };
-  if (count.n > 0) return;
-
-  const insert = getDb().prepare(
-    "INSERT OR IGNORE INTO nice_list_users (user_id) VALUES (?)",
-  );
-  for (const userId of DEFAULT_NICE_LIST_USER_IDS) {
-    insert.run(userId);
-  }
-}
 
 export function isNiceListUser(userId: string): boolean {
   const row = getDb()

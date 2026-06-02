@@ -1,4 +1,3 @@
-import { DEFAULT_CONTACTS } from "@/constants/defaultContacts";
 import { getDb } from "@/db/database";
 import { normalizeName } from "@/utils/normalizeName";
 
@@ -14,20 +13,6 @@ function requireGuildId(guildId: string | null): string {
 
 function isDiscordId(value: string): boolean {
   return /^\d{17,20}$/.test(value);
-}
-
-export function seedDefaultContacts(guildId: string): void {
-  const count = getDb()
-    .prepare(`SELECT COUNT(*) AS n FROM contacts WHERE guild_id = ?`)
-    .get(guildId) as { n: number };
-  if (count.n > 0) return;
-
-  const insert = getDb().prepare(
-    `INSERT INTO contacts (guild_id, name, display_name, user_id) VALUES (?, ?, ?, ?)`,
-  );
-  for (const [displayName, userId] of Object.entries(DEFAULT_CONTACTS)) {
-    insert.run(guildId, normalizeName(displayName), displayName, userId);
-  }
 }
 
 export function addContact(

@@ -5,7 +5,7 @@ import {
   describePlaylistTrack,
 } from "@/db/playlists";
 import type { UserGroupSummary } from "@/db/userGroups";
-import { displayNameForUserId } from "@/constants/people";
+import { getDisplayNameForUserId } from "@/db/contacts";
 import { EMBED_DESCRIPTION_MAX_LENGTH } from "@/constants/constants";
 import { EmbedBuilder, type Guild } from "discord.js";
 
@@ -99,7 +99,7 @@ export function buildGroupsEmbed(
         ? "*(empty)*"
         : group.memberIds
             .map((id) => {
-              const label = displayNameForUserId(id, guildId);
+              const label = getDisplayNameForUserId(guildId, id);
               return label.startsWith("<@") ? label : `**${label}**`;
             })
             .join(", ");

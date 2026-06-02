@@ -166,7 +166,7 @@ export function buildPlaylistsEmbed(
 
   if (playlists.length === 0) {
     embed.setDescription(
-      "No playlists yet.\nUse `/playlist create` or ask Stacy to create one.",
+      "No playlists yet — your **Favorites** playlist will appear when you save a track.",
     );
     return embed;
   }

@@ -1,6 +1,10 @@
 import { getDb } from "@/db/database";
 import { normalizeName } from "@/utils/normalizeName";
 
+/** Normalized key + display label for every user's default playlist. */
+export const DEFAULT_PLAYLIST_KEY = "favorites";
+export const DEFAULT_PLAYLIST_NAME = "Favorites";
+
 export type PlaylistSummary = {
   name: string;
   trackCount: number;
@@ -32,6 +36,26 @@ function assertUserId(userId: string): void {
   if (!/^\d{17,20}$/.test(userId)) {
     throw new Error("Invalid user ID.");
   }
+}
+
+function isDefaultPlaylist(rawName: string): boolean {
+  return normalizeName(rawName) === DEFAULT_PLAYLIST_KEY;
+}
+
+/** Every user gets an empty **Favorites** playlist until they use other playlist features. */
+export function ensureDefaultPlaylist(userId: string): void {
+  assertUserId(userId);
+  getDb()
+    .prepare(
+      `INSERT OR IGNORE INTO playlists (user_id, name, display_name)
+       VALUES (?, ?, ?)`,
+    )
+    .run(userId, DEFAULT_PLAYLIST_KEY, DEFAULT_PLAYLIST_NAME);
+}
+
+function prepareUserPlaylists(userId: string): void {
+  assertUserId(userId);
+  ensureDefaultPlaylist(userId);
 }
 
 function assertUrl(url: string): void {
@@ -79,7 +103,7 @@ function getPlaylistRow(
 }
 
 export function createPlaylist(userId: string, playlistName: string): void {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   if (!playlistName.trim()) throw new Error("Playlist name is required.");
 
   const normalized = normalizeName(playlistName);
@@ -104,8 +128,11 @@ export function createPlaylist(userId: string, playlistName: string): void {
 }
 
 export function deletePlaylist(userId: string, playlistName: string): boolean {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   if (!playlistName.trim()) throw new Error("Playlist name is required.");
+  if (isDefaultPlaylist(playlistName)) {
+    throw new Error(`The **${DEFAULT_PLAYLIST_NAME}** playlist can't be deleted.`);
+  }
 
   const result = getDb()
     .prepare(`DELETE FROM playlists WHERE user_id = ? AND name = ?`)
@@ -118,9 +145,12 @@ export function renamePlaylist(
   playlistName: string,
   newName: string,
 ): boolean {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   if (!playlistName.trim() || !newName.trim()) {
     throw new Error("Current and new playlist names are required.");
+  }
+  if (isDefaultPlaylist(playlistName)) {
+    throw new Error(`The **${DEFAULT_PLAYLIST_NAME}** playlist can't be renamed.`);
   }
 
   const existing = getPlaylistRow(userId, playlistName);
@@ -149,7 +179,7 @@ export function renamePlaylist(
 }
 
 export function listPlaylists(userId: string): PlaylistSummary[] {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   const rows = getDb()
     .prepare(
       `SELECT p.display_name, COUNT(t.id) AS track_count
@@ -173,7 +203,7 @@ export function addTrackToPlaylist(
   trackName: string,
   data: { title?: string; artist?: string; url?: string },
 ): void {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   if (!playlistName.trim()) throw new Error("Playlist name is required.");
   if (!trackName.trim()) throw new Error("A short name is required for this track.");
   assertPlaybackTarget(data);
@@ -216,7 +246,7 @@ export function removeTrackFromPlaylist(
   playlistName: string,
   trackName: string,
 ): boolean {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   const playlist = getPlaylistRow(userId, playlistName);
   if (!playlist) return false;
   if (!trackName.trim()) throw new Error("Track name is required.");
@@ -240,7 +270,7 @@ export function updateTrackInPlaylist(
     url?: string;
   },
 ): boolean {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   const playlist = getPlaylistRow(userId, playlistName);
   if (!playlist) return false;
   if (!trackName.trim()) throw new Error("Track name is required.");
@@ -325,7 +355,7 @@ export function listPlaylistTracks(
   userId: string,
   playlistName: string,
 ): PlaylistTrack[] {
-  assertUserId(userId);
+  prepareUserPlaylists(userId);
   const playlist = getPlaylistRow(userId, playlistName);
   if (!playlist) {
     throw new Error(`You don't have a playlist named **${playlistName.trim()}**.`);
@@ -347,6 +377,7 @@ export function getTrackFromPlaylist(
   playlistName: string,
   trackName: string,
 ): PlaylistTrack | undefined {
+  prepareUserPlaylists(userId);
   const playlist = getPlaylistRow(userId, playlistName);
   if (!playlist) return undefined;
 
@@ -363,6 +394,7 @@ export function pickRandomTrackFromPlaylist(
   userId: string,
   playlistName: string,
 ): PlaylistTrack | undefined {
+  prepareUserPlaylists(userId);
   const playlist = getPlaylistRow(userId, playlistName);
   if (!playlist) return undefined;
 
@@ -401,10 +433,10 @@ export function migrateFavoriteSongsToPlaylists(): void {
     .all() as { user_id: string }[];
 
   const insertPlaylist = db.prepare(
-    `INSERT OR IGNORE INTO playlists (user_id, name, display_name) VALUES (?, 'favorites', 'Favorites')`,
+    `INSERT OR IGNORE INTO playlists (user_id, name, display_name) VALUES (?, ?, ?)`,
   );
   const findPlaylist = db.prepare(
-    `SELECT id FROM playlists WHERE user_id = ? AND name = 'favorites'`,
+    `SELECT id FROM playlists WHERE user_id = ? AND name = ?`,
   );
   const insertTrack = db.prepare(
     `INSERT OR IGNORE INTO playlist_tracks (playlist_id, name, display_name, title, artist, url)
@@ -414,8 +446,10 @@ export function migrateFavoriteSongsToPlaylists(): void {
   );
 
   for (const { user_id } of users) {
-    insertPlaylist.run(user_id);
-    const playlist = findPlaylist.get(user_id) as { id: number } | undefined;
+    insertPlaylist.run(user_id, DEFAULT_PLAYLIST_KEY, DEFAULT_PLAYLIST_NAME);
+    const playlist = findPlaylist.get(user_id, DEFAULT_PLAYLIST_KEY) as
+      | { id: number }
+      | undefined;
     if (!playlist) continue;
 
     const songs = db

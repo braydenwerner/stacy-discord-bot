@@ -1,6 +1,6 @@
 # Stacy Discord Bot
 
-Stacy is a Discord bot powered by **OpenAI** (via [LangChain](https://js.langchain.com/)) and **discord.js**. She answers when you mention her name or reply to one of her messages, can play music in voice channels, remembers recent chat per user in **SQLite**, and uses an **agent loop** so the model can call tools (search the web, ping contacts, manage groups, open PRs, and more) before replying.
+Stacy is a Discord bot powered by **OpenAI** (via [LangChain](https://js.langchain.com/)) and **discord.js**. She answers when you mention her name or reply to one of her messages, plays music in voice channels, remembers recent chat per user in **SQLite**, and uses an **agent loop** so the model can call tools (search the web, ping contacts, manage groups, open PRs, and more) before replying.
 
 Runs in production on a Raspberry Pi (**PiQueen**); see [AGENTS.md](./AGENTS.md) for tmux restart conventions on that host.
 
@@ -16,7 +16,7 @@ Runs in production on a Raspberry Pi (**PiQueen**); see [AGENTS.md](./AGENTS.md)
 git clone https://github.com/braydenwerner/stacy-discord-bot.git
 cd stacy-discord-bot
 pnpm install
-cp .env.example .env   # if present; otherwise create .env (see below)
+# Create .env with the variables below (no .env.example in repo)
 pnpm run deployCommands
 pnpm run dev
 ```
@@ -52,14 +52,58 @@ Stacy only processes a message when:
 1. The author is not a bot, **and**
 2. The message contains **`STACY`** (case-insensitive), **or** it is a **reply** to one of Stacy’s messages.
 
-She picks a **system prompt** from the SQLite **nice list**:
+### Tone (nice vs snarky)
 
-- **Nice list** → helpful, warm tone (`NICE_SYSTEM_PROMPT`)
-- **Everyone else** → snarky, deliberately unhelpful tone (`SNARKY_SYSTEM_PROMPT`)
+| Who | Tone |
+|-----|------|
+| Users on the **nice list** (`nice_list_users` in SQLite) | Helpful, warm |
+| **Everyone else** (default) | Snarky, deliberately unhelpful wording |
 
-Music and most “action” tools still run for everyone; tone only affects how she *words* replies. The model is instructed never to reveal that tone depends on who is talking.
+- **Default is snarky.** Users are only nice after the bot owner adds them (`/tone nice-add` or `manageToneList` / `nice_add`).
+- Music, playlists, and most action tools still run for everyone; tone only affects how Stacy *words* replies.
+- The model is instructed never to reveal that tone depends on who is talking.
+- On first run with an empty nice list, a small seed set is inserted (see `src/constants/defaultNiceList.ts`).
 
 Recent conversation (last **10** text turns per Discord user) is loaded from SQLite and saved after each reply.
+
+## Personal playlists
+
+Each Discord user has their own playlists in SQLite. **You can only read or change your own** (slash commands and tools always use the message author’s ID).
+
+### Default **Favorites** playlist
+
+- Every user gets an empty **Favorites** playlist the first time they use any playlist feature (`ensureDefaultPlaylist` in `src/db/playlists.ts`).
+- It cannot be **deleted** or **renamed** (you can still add/remove/rename tracks inside it).
+- Legacy `favorite_songs` rows are migrated into **Favorites** on startup, then the old table is dropped.
+
+### Track shape
+
+Each track has a short **label** (unique within a playlist) plus either:
+
+- **title** (+ optional **artist**) for YouTube search at playback, or  
+- **url** (http/https) for direct playback
+
+### Playback
+
+- **Chat:** `playSong` with `playlist` and optional `trackName` — random track if `trackName` is omitted.
+- **Slash:** `/playlist play playlist:<name> [track:<label>]` — random if `track` is omitted.
+
+Examples:
+
+- `/playlist add playlist:favorites track:hype title:Never Gonna Give You Up artist:Rick Astley`
+- `/playlist play playlist:favorites` → random from Favorites
+- “Stacy, play chill from my party playlist”
+
+## Music player panel
+
+When a track starts (and when you use queue/lyrics/controls), Stacy posts a **music context panel** in the channel:
+
+- **Reposts instead of editing:** the previous panel message is **deleted** and a **new** one is sent at the bottom of chat so it is not buried in fast channels.
+- **Tab row:** Now Playing | Queue | Lyrics (if loaded) — active tab is blurple.
+- **Control row:** Pause/Resume | Skip | Dismiss.
+- Track URLs are included in message `content` where possible so Discord can show native link previews.
+
+Implementation: `src/utils/music/musicContextPanel.ts`, listeners in `src/utils/music/registerMusicPlayerListeners.ts`.
 
 ## Agent loop and tool calls
 
@@ -91,7 +135,7 @@ sequenceDiagram
 | Kind | Examples | Behavior |
 |------|----------|----------|
 | **Read** | `webSearch`, `fetchPage` | Return text to the model only; loop continues so Stacy can summarize or chain another tool |
-| **Action** | Music, `sendMessage`, groups, contacts, tone, PR | Usually post to Discord themselves; loop **stops** after action-only steps (no extra chatty model pass) |
+| **Action** | Music, `sendMessage`, groups, contacts, playlists, tone, PR | Usually post to Discord themselves; loop **stops** after action-only steps (no extra chatty model pass) |
 
 If an action tool returns `ERROR:` or `PARTIAL:` (see `src/utils/toolResult.ts`), the loop treats it like a read tool so the model can explain or retry.
 
@@ -99,30 +143,31 @@ Tool handlers receive the triggering Discord `message` via LangChain config: `{ 
 
 ### Tools bound to the model
 
-These are registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and invoked from `messageCreate.ts` (except where noted).
+Registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and invoked from `messageCreate.ts`.
 
 #### Music (anyone in voice)
 
 | Tool | Parameters | What it does |
 |------|------------|--------------|
-| `playSong` | `songName?`, `artist?`, `url?`, `playlist?`, `trackName?` | Search/play in voice; `playlist` (+ optional `trackName`) plays from saved playlists (random if track omitted) |
+| `playSong` | `songName?`, `artist?`, `url?`, `playlist?`, `trackName?` | Search/play in voice; `playlist` + optional `trackName` plays from saved playlists (random if track omitted) |
 | `pauseOrResumeSong` | — | Toggle pause |
 | `skipSong` | — | Skip current track |
-| `viewSongQueue` | — | Post queue in the music context panel |
-| `lyrics` | `songName?`, `artist?` | Fetch/post lyrics for current or named track |
-| `nowPlaying` | — | Show current track and controls panel |
+| `viewSongQueue` | — | Open queue tab on the music panel |
+| `lyrics` | `songName?`, `artist?` | Fetch/post lyrics (enables Lyrics tab) |
+| `nowPlaying` | — | Open Now Playing tab on the music panel |
 
 #### Messaging (anyone)
 
 | Tool | Parameters | What it does |
 |------|------------|--------------|
-| `sendMessage` | `names[]`, `text` | `@mention` known **contacts** by name in the current channel (only when the user explicitly asks to tell/send someone something) |
+| `sendMessage` | `names[]`, `text` | `@mention` known **contacts** by name (only when the user explicitly asks to tell/send someone something) |
 
 #### Playlists — **your lists only**
 
-| Tool | Parameters | What it does |
-|------|------------|--------------|
-| `managePlaylists` | `action`: playlist CRUD + `add_track` / `remove_track` / `update_track` / `list_tracks`, `playlist?`, `trackName?`, `title?`, `artist?`, `url?`, etc. | Manage personal playlists and tracks (always the message author) |
+| Tool | `action` values | What it does |
+|------|-----------------|--------------|
+| `managePlaylists` | `create_playlist`, `delete_playlist`, `rename_playlist`, `list_playlists` | Manage playlist names |
+| | `add_track`, `remove_track`, `update_track`, `list_tracks` | Manage tracks inside a playlist (`playlist` + `trackName` + title/URL as needed) |
 
 #### Contacts — **Equality** role
 
@@ -161,27 +206,41 @@ These are registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and i
 
 ### Tool result prefixes (for the agent)
 
-Some tools return structured strings for the loop:
-
-- `OK: …` — success detail
-- `PARTIAL: …` — partial success (e.g. group create with some unknown names)
-- `ERROR: …` — failure; model may follow up
+- `OK: …` — success detail  
+- `PARTIAL: …` — partial success (e.g. group create with some unknown names)  
+- `ERROR: …` — failure; model may follow up  
 
 ## Slash commands
 
-Deploy with `pnpm run deployCommands`. Current commands:
+Deploy with `pnpm run deployCommands`.
 
-| Command | Access | Description |
-|---------|--------|-------------|
+| Command | Access | Subcommands / notes |
+|---------|--------|---------------------|
 | `/hello` | Everyone | Join voice and play a short hello clip (if in VC) |
 | `/play` | Everyone | Stub (“in progress”) |
-| `/playlist` | You only | `create`, `delete`, `rename`, `list`, `tracks`, `add`, `remove`, `update`, `play` |
+| `/playlist` | You only | See table below |
 | `/people` | Equality | List contacts (embed) |
-| `/contact` | Equality | `add`, `remove`, `update` contacts |
+| `/contact` | Equality | `add`, `remove`, `update` |
 | `/group` | Equality | `create`, `add-member`, `remove-member`, `delete`, `list`, `ping` |
-| `/tone` | Bot owner | `nice-add`, `nice-remove`, `snarky-add`, `list` nice-list users |
+| `/tone` | Bot owner | `nice-add`, `nice-remove`, `snarky-add` (alias for remove), `list` |
 
 **Equality** = Discord role named `Equality` (case-insensitive).
+
+### `/playlist` subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `create` | New playlist (`name`) |
+| `delete` | Delete a playlist (**not** Favorites) |
+| `rename` | Rename a playlist (**not** Favorites) |
+| `list` | All your playlists + track counts (includes Favorites) |
+| `tracks` | List tracks in one playlist |
+| `add` | Add track (`playlist`, `track`, `title` and/or `url`, optional `artist`) |
+| `remove` | Remove track by label |
+| `update` | Change track label or song fields |
+| `play` | Play from playlist; **omit `track` for random** |
+
+Replies are **ephemeral** except music playback (panel posts in-channel).
 
 ## SQLite
 
@@ -194,20 +253,23 @@ Default database: `data/stacy.db` (gitignored).
 | `contacts` | Guild-scoped name → Discord user ID |
 | `user_groups` / `group_members` | Named ping groups |
 | `nice_list_users` | Who gets the nice tone (seeded on first run if empty) |
-| `playlists` / `playlist_tracks` | Per-user named playlists and saved tracks |
+| `playlists` | Per-user playlist names (`favorites` = default **Favorites**) |
+| `playlist_tracks` | Tracks inside each playlist |
 
-Migrations run automatically on startup (`src/db/migrations.ts`).
+Migrations run automatically on startup (`src/db/migrations.ts`). Playlist migration from legacy `favorite_songs` runs once in `initDatabase`.
 
 ## Project layout
 
 ```
 src/
   index.ts              # Client, player, DB init
-  commands/             # Slash commands
+  commands/             # Slash commands (/playlist, /group, …)
   events/               # messageCreate agent loop, interactions
   tools/                # LangChain DynamicStructuredTool definitions
   db/                   # SQLite access + migrations
-  utils/                # Music panels, roles, embeds, PR queue, etc.
+  utils/
+    music/              # playTrack, context panel, player listeners
+    directoryEmbeds.ts  # Embeds for contacts, groups, playlists, nice list
 ```
 
 ## Development on PiQueen

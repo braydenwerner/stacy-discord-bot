@@ -8,6 +8,7 @@ import { EmbedBuilder, Message } from "discord.js";
 import { z } from "zod";
 
 import { queueEmbedResponse } from "../utils/music/musicUtil";
+import { createOrUpdateContextPanel } from "../utils/music/musicContextPanel";
 
 // const lyricsExtractor = lyricsExtractorSuper();
 
@@ -168,8 +169,8 @@ export const viewSongQueueTool = new DynamicStructuredTool({
         return "";
       }
 
-      // Show queue, interactive
-      queueEmbedResponse(message, queue);
+      // Show queue in unified context panel
+      await createOrUpdateContextPanel(message, queue, "queue");
     } catch (error) {
       message.reply(truncateMessage(`Failed to view song queue. ${error}`));
       throw error;
@@ -216,26 +217,34 @@ export const lyricsTool = new DynamicStructuredTool({
 
       const { name, artistName, plainLyrics } = res[0];
 
-      let description = plainLyrics;
-      if (description && description.length > EMBED_DESCRIPTION_MAX_LENGTH)
-        description =
-          description.slice(0, EMBED_DESCRIPTION_MAX_LENGTH - 3) + "...";
+      // Show lyrics in unified context panel
+      const queue = useQueue(message.guild.id);
+      if (queue) {
+        await createOrUpdateContextPanel(
+          message,
+          queue,
+          "lyrics",
+          { name, artistName, plainLyrics }
+        );
+      } else {
+        // Fallback if no queue (shouldn't happen but just in case)
+        let description = plainLyrics;
+        if (description && description.length > EMBED_DESCRIPTION_MAX_LENGTH)
+          description =
+            description.slice(0, EMBED_DESCRIPTION_MAX_LENGTH - 3) + "...";
 
-      const lyricsEmbed = new EmbedBuilder()
-        .setColor(1752220)
-        .setTitle(name ?? "Unknown")
-        .setAuthor({
-          name: artistName ?? "Unknown",
-          // url: url ?? null,
-          // iconURL: image ?? null,
-        })
-        .setDescription(description ?? "Instrumental");
-      // .setURL(url);
+        const lyricsEmbed = new EmbedBuilder()
+          .setColor(1752220)
+          .setTitle(name ?? "Unknown")
+          .setAuthor({
+            name: artistName ?? "Unknown",
+          })
+          .setDescription(description ?? "Instrumental");
 
-      // if (image || thumbnail) lyricsEmbed.setImage(image ?? thumbnail);
-      if (name) lyricsEmbed.setFooter({ text: name });
+        if (name) lyricsEmbed.setFooter({ text: name });
 
-      await message.reply({ embeds: [lyricsEmbed] });
+        await message.reply({ embeds: [lyricsEmbed] });
+      }
     } catch (error) {
       message.reply(truncateMessage(`Failed to get lyrics. ${error}`));
       throw error;
@@ -245,10 +254,13 @@ export const lyricsTool = new DynamicStructuredTool({
   },
 });
 
+import { nowPlayingTool } from "./nowPlayingTool";
+
 export const musicTools = [
   playSongTool,
   pauseOrResumeSongTool,
   skipSongTool,
   viewSongQueueTool,
   lyricsTool,
+  nowPlayingTool,
 ];

@@ -15,6 +15,8 @@ declare global {
       YOUTUBE_COOKIE?: string;
       /** SQLite file path (default: ./data/stacy.db) */
       DATABASE_PATH?: string;
+      /** Discord user ID allowed to manage nice/snarky list (default: breadone) */
+      STACY_OWNER_ID?: string;
     }
   }
 }

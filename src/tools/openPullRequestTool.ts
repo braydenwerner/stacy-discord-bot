@@ -1,4 +1,4 @@
-import { FAVORED_USER_IDS } from "@/constants/constants";
+import { isFavoredUser } from "@/utils/favoredUsers";
 import { enqueuePullRequest } from "@/utils/prQueue";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { truncateMessage } from "@/utils/truncateMessage";
@@ -22,7 +22,7 @@ export const openPullRequestTool = new DynamicStructuredTool({
     const message = getToolMessage(config);
 
     // Hard gate: only the owner may open PRs (the real boundary, independent of persona).
-    if (!FAVORED_USER_IDS.has(message.author.id)) {
+    if (!isFavoredUser(message.author.id)) {
       message.reply(truncateMessage("I can't open pull requests for you."));
       return "";
     }

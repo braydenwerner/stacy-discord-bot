@@ -16,11 +16,6 @@ export const EMBED_DESCRIPTION_MAX_LENGTH = 2048;
 
 export const EQUALITY_ROLE_NAME = "Equality";
 
-export const FAVORED_USER_IDS = new Set([
-  "268201627452833794",
-  "639865199549218858",
-]);
-
 export const emojis = {
   success: "✅",
   error: "❌",

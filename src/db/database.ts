@@ -1,4 +1,5 @@
 import { seedDefaultContacts } from "@/db/contacts";
+import { seedDefaultNiceList } from "@/db/niceList";
 import { runMigrations } from "@/db/migrations";
 import fs from "node:fs";
 import path from "node:path";
@@ -25,6 +26,7 @@ export function initDatabase(
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
   runMigrations(db);
+  seedDefaultNiceList();
 
   if (process.env.GUILD_ID) {
     seedDefaultContacts(process.env.GUILD_ID);

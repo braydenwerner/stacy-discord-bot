@@ -52,6 +52,12 @@ const MIGRATIONS: string[] = [
     CREATE INDEX IF NOT EXISTS idx_contacts_guild_id
       ON contacts (guild_id);
   `,
+  `
+    CREATE TABLE IF NOT EXISTS nice_list_users (
+      user_id TEXT PRIMARY KEY,
+      added_at INTEGER NOT NULL DEFAULT (unixepoch())
+    );
+  `,
 ];
 
 export function runMigrations(db: DatabaseSync): void {

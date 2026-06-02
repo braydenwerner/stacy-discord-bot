@@ -1,6 +1,6 @@
 // https://js.langchain.com/docs/modules/chains/additional/openai_functions/
 
-import { FAVORED_USER_IDS } from "@/constants/constants";
+import { isFavoredUser } from "@/utils/favoredUsers";
 import type { CustomClient } from "@/index";
 import {
   lyricsTool,
@@ -11,6 +11,7 @@ import {
 } from "@/tools/musicPlayerTools";
 // import { playSongTool } from "@/tools/playSongTool";
 import { fetchPageTool } from "@/tools/fetchPageTool";
+import { manageToneListTool } from "@/tools/manageToneListTool";
 import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { listContactsTool } from "@/tools/listContactsTool";
 import { listUserGroupsTool } from "@/tools/listUserGroupsTool";
@@ -56,6 +57,7 @@ const tools: Record<string, DynamicStructuredTool> = {
   [listContactsTool.name]: listContactsTool,
   [listUserGroupsTool.name]: listUserGroupsTool,
   [pingGroupTool.name]: pingGroupTool,
+  [manageToneListTool.name]: manageToneListTool,
   [openPullRequestTool.name]: openPullRequestTool,
 };
 
@@ -84,13 +86,13 @@ export default async function messageCreate(
     return;
   }
 
-  const isFavoredUser = FAVORED_USER_IDS.has(message.author.id);
-  const systemPrompt = isFavoredUser ? NICE_SYSTEM_PROMPT : SNARKY_SYSTEM_PROMPT;
+  const userIsFavored = isFavoredUser(message.author.id);
+  const systemPrompt = userIsFavored ? NICE_SYSTEM_PROMPT : SNARKY_SYSTEM_PROMPT;
   const sessionId = message.author.id;
 
   console.log(
     `[tone] user=${message.author.tag} (${message.author.id}) tone=${
-      isFavoredUser ? "nice" : "snarky"
+      userIsFavored ? "nice" : "snarky"
     } message="${message.content}"`,
   );
 

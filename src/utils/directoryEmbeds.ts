@@ -121,3 +121,29 @@ export function groupsSummaryForModel(count: number): string {
   if (count === 0) return "No user groups on this server.";
   return `Listed ${count} group${count === 1 ? "" : "s"} in an embed.`;
 }
+
+export function buildNiceListEmbed(userIds: string[]): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(0xf1c40f)
+    .setTitle("😊 Nice list")
+    .setTimestamp();
+
+  if (userIds.length === 0) {
+    embed.setDescription(
+      "No one is on the nice list. Stacy uses the **snarky** tone for everyone.",
+    );
+    return embed;
+  }
+
+  const lines = userIds.map((id) => `<@${id}> (\`${id}\`)`).join("\n");
+  embed.setDescription(
+    `**${userIds.length}** user${userIds.length === 1 ? "" : "s"} get the **nice** tone.\n\n${lines}`,
+  );
+  embed.setFooter({ text: "Everyone else gets the snarky tone." });
+  return embed;
+}
+
+export function niceListSummaryForModel(count: number): string {
+  if (count === 0) return "Nice list is empty; everyone gets snarky tone.";
+  return `Listed ${count} user${count === 1 ? "" : "s"} on the nice list.`;
+}

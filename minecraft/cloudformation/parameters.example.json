@@ -1,7 +1,7 @@
 [
   {
     "ParameterKey": "ProjectName",
-    "ParameterValue": "stacy-minecraft"
+    "ParameterValue": "stacy-mc"
   },
   {
     "ParameterKey": "InstanceType",
@@ -12,7 +12,7 @@
     "ParameterValue": "30"
   },
   {
-    "ParameterKey": "MinecraftPort",
+    "ParameterKey": "McPort",
     "ParameterValue": "25565"
   },
   {
@@ -60,8 +60,8 @@
     "ParameterValue": "30"
   },
   {
-    "ParameterKey": "MinecraftVersion",
-    "ParameterValue": "1.21.1"
+    "ParameterKey": "McVersion",
+    "ParameterValue": "26.1.2"
   },
   {
     "ParameterKey": "JvmMaxMemory",

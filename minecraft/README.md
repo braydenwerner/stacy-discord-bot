@@ -26,11 +26,11 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-After deploy, set Pi `.env` from stack outputs (`InstanceId`, `MinecraftHost`, `BackupBucket`, bot IAM keys). See main [README](../README.md) for Stacy env vars.
+After deploy, set Pi `.env` from stack outputs (`InstanceId`, `McHost`, `BackupBucket`, bot IAM keys). See main [README](../README.md) for Stacy env vars.
 
 ## Parameters
 
-`cloudformation/parameters.json` holds CloudFormation stack params plus user-data-only keys (`MinecraftVersion`, `JvmMaxMemory`, `IdleShutdownMinutes`, `BackupIntervalHours`, `AwsRegion`). `EnableScheduledStart` defaults to **`false`**.
+`cloudformation/parameters.json` holds CloudFormation stack params plus user-data-only keys (`McVersion`, `JvmMaxMemory`, `IdleShutdownMinutes`, `BackupIntervalHours`, `AwsRegion`). `EnableScheduledStart` defaults to **`false`**.
 
 ## Server automation
 
@@ -43,7 +43,7 @@ Edit `server/` scripts, then re-run `./deploy.sh`.
 ## Destroy
 
 ```bash
-aws cloudformation delete-stack --stack-name stacy-minecraft
+aws cloudformation delete-stack --stack-name stacy-mc
 ```
 
 Back up the S3 bucket first if you want to keep world archives.

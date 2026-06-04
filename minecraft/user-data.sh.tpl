@@ -5,9 +5,9 @@ exec > /var/log/minecraft-user-data.log 2>&1
 
 BACKUP_BUCKET="__BACKUP_BUCKET__"
 AWS_REGION="__AWS_REGION__"
-MINECRAFT_VERSION="__MINECRAFT_VERSION__"
+MC_VERSION="__MC_VERSION__"
 JVM_MAX="__JVM_MAX_MEMORY__"
-MC_PORT="__MINECRAFT_PORT__"
+MC_PORT="__MC_PORT__"
 IDLE_MINUTES="__IDLE_SHUTDOWN_MINUTES__"
 
 install -d -m 755 /opt/minecraft/scripts
@@ -34,7 +34,7 @@ chmod +x /opt/minecraft/scripts/*.sh
 id -u minecraft &>/dev/null || useradd -r -m -d /opt/minecraft -s /sbin/nologin minecraft
 
 /opt/minecraft/scripts/install-server.sh \
-  "${MINECRAFT_VERSION}" "${JVM_MAX}" "${MC_PORT}" "${BACKUP_BUCKET}" "${AWS_REGION}" "${IDLE_MINUTES}"
+  "${MC_VERSION}" "${JVM_MAX}" "${MC_PORT}" "${BACKUP_BUCKET}" "${AWS_REGION}" "${IDLE_MINUTES}"
 
 chown -R minecraft:minecraft /opt/minecraft
 

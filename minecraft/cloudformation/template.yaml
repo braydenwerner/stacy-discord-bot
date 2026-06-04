@@ -1,30 +1,31 @@
 AWSTemplateFormatVersion: "2010-09-09"
-Description: Pay-when-used Minecraft server — EC2, S3 backups, IAM, optional EventBridge start.
+Description: On-demand EC2 compute with S3 data retention and optional scheduled start.
 
 Parameters:
   ProjectName:
     Type: String
-    Default: stacy-minecraft
+    Default: stacy-mc
     Description: Prefix for resource names and tags.
 
   InstanceType:
     Type: String
     Default: c6i.xlarge
-    Description: EC2 instance type (c6i.xlarge or c7g.xlarge recommended).
+    Description: EC2 instance type.
 
   RootVolumeSizeGb:
     Type: Number
     Default: 30
     Description: Root gp3 volume size in GB.
 
-  MinecraftPort:
+  McPort:
     Type: Number
     Default: 25565
+    Description: Primary TCP service port.
 
   AllowedCidrBlocks:
     Type: String
     Default: 0.0.0.0/0
-    Description: CIDR block allowed to connect to Minecraft.
+    Description: CIDR block allowed on the service port.
 
   SshCidrBlocks:
     Type: String
@@ -82,10 +83,10 @@ Conditions:
   DoScheduledStart: !Equals [!Ref EnableScheduledStart, "true"]
 
 Resources:
-  WorldBackupsBucket:
+  McBackupsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ProjectName}-world-backups-${AWS::AccountId}"
+      BucketName: !Sub "${ProjectName}-data-backups-${AWS::AccountId}"
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -109,20 +110,20 @@ Resources:
         - Key: ManagedBy
           Value: cloudformation
         - Key: Application
-          Value: minecraft
+          Value: mc
 
-  MinecraftSecurityGroup:
+  McSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Minecraft server ingress
+      GroupDescription: MC workload ingress
       GroupName: !Sub "${ProjectName}-sg"
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: !Ref MinecraftPort
-          ToPort: !Ref MinecraftPort
+          FromPort: !Ref McPort
+          ToPort: !Ref McPort
           CidrIp: !Ref AllowedCidrBlocks
-          Description: Minecraft
+          Description: Service
       SecurityGroupEgress:
         - IpProtocol: "-1"
           CidrIp: 0.0.0.0/0
@@ -130,11 +131,11 @@ Resources:
         - Key: Name
           Value: !Sub "${ProjectName}-sg"
 
-  MinecraftSecurityGroupIngressExtra:
+  McSecurityGroupSshIngress:
     Type: AWS::EC2::SecurityGroupIngress
     Condition: HasSshAccess
     Properties:
-      GroupId: !Ref MinecraftSecurityGroup
+      GroupId: !Ref McSecurityGroup
       IpProtocol: tcp
       FromPort: 22
       ToPort: 22
@@ -161,7 +162,7 @@ Resources:
                 Action:
                   - s3:PutObject
                   - s3:AbortMultipartUpload
-                Resource: !Sub "${WorldBackupsBucket.Arn}/*"
+                Resource: !Sub "${McBackupsBucket.Arn}/*"
       Tags:
         - Key: Project
           Value: !Ref ProjectName
@@ -173,14 +174,14 @@ Resources:
       Roles:
         - !Ref Ec2Role
 
-  MinecraftInstance:
+  McInstance:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Sub "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}"
       InstanceType: !Ref InstanceType
       SubnetId: !Ref SubnetId
       SecurityGroupIds:
-        - !Ref MinecraftSecurityGroup
+        - !Ref McSecurityGroup
       IamInstanceProfile: !Ref Ec2InstanceProfile
       KeyName: !If [HasKeyName, !Ref KeyName, !Ref AWS::NoValue]
       UserData: __USERDATA_BASE64__
@@ -195,20 +196,20 @@ Resources:
         HttpTokens: required
       Tags:
         - Key: Name
-          Value: !Sub "${ProjectName}-server"
+          Value: !Sub "${ProjectName}-host"
         - Key: Project
           Value: !Ref ProjectName
         - Key: ManagedBy
           Value: cloudformation
         - Key: Application
-          Value: minecraft
+          Value: mc
 
-  MinecraftEip:
+  McEip:
     Type: AWS::EC2::EIP
     Condition: DoAllocateEip
     Properties:
       Domain: vpc
-      InstanceId: !Ref MinecraftInstance
+      InstanceId: !Ref McInstance
       Tags:
         - Key: Name
           Value: !Sub "${ProjectName}-eip"
@@ -227,7 +228,7 @@ Resources:
                 Action:
                   - ec2:StartInstances
                   - ec2:StopInstances
-                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${MinecraftInstance}"
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${McInstance}"
               - Effect: Allow
                 Action:
                   - ec2:DescribeInstances
@@ -235,13 +236,13 @@ Resources:
                 Resource: "*"
               - Effect: Allow
                 Action: s3:ListBucket
-                Resource: !GetAtt WorldBackupsBucket.Arn
+                Resource: !GetAtt McBackupsBucket.Arn
                 Condition:
                   StringLike:
-                    s3:prefix: worlds/*
+                    s3:prefix: archives/*
               - Effect: Allow
                 Action: s3:GetObject
-                Resource: !Sub "${WorldBackupsBucket.Arn}/*"
+                Resource: !Sub "${McBackupsBucket.Arn}/*"
       Tags:
         - Key: Project
           Value: !Ref ProjectName
@@ -271,7 +272,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: ec2:StartInstances
-                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${MinecraftInstance}"
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${McInstance}"
       Tags:
         - Key: Project
           Value: !Ref ProjectName
@@ -289,26 +290,26 @@ Resources:
         Arn: arn:aws:scheduler:::aws-sdk:ec2:startInstances
         RoleArn: !GetAtt SchedulerRole.Arn
         Input: !Sub |
-          {"InstanceIds": ["${MinecraftInstance}"]}
+          {"InstanceIds": ["${McInstance}"]}
 
 Outputs:
   InstanceId:
-    Description: Set as MINECRAFT_INSTANCE_ID on the Pi.
-    Value: !Ref MinecraftInstance
+    Description: EC2 instance ID for the bot (MINECRAFT_INSTANCE_ID).
+    Value: !Ref McInstance
 
-  MinecraftHost:
-    Description: Set as MINECRAFT_SERVER_HOST on the Pi.
+  McHost:
+    Description: Public connect host for the bot (MINECRAFT_SERVER_HOST).
     Value: !If
       - DoAllocateEip
-      - !Ref MinecraftEip
-      - !GetAtt MinecraftInstance.PublicIp
+      - !Ref McEip
+      - !GetAtt McInstance.PublicIp
 
-  MinecraftPort:
-    Value: !Ref MinecraftPort
+  McPort:
+    Value: !Ref McPort
 
   BackupBucket:
-    Description: Set as MINECRAFT_BACKUP_BUCKET on the Pi.
-    Value: !Ref WorldBackupsBucket
+    Description: S3 backup bucket for the bot (MINECRAFT_BACKUP_BUCKET).
+    Value: !Ref McBackupsBucket
 
   BotIamUser:
     Condition: DoCreateBotUser
@@ -323,7 +324,6 @@ Outputs:
     Condition: DoCreateBotUser
     Description: Set as AWS_SECRET_ACCESS_KEY on the Pi.
     Value: !GetAtt StacyBotAccessKey.SecretAccessKey
-    NoEcho: true
 
   AwsRegion:
     Value: !Ref AWS::Region

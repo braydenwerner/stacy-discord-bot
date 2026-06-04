@@ -13,7 +13,7 @@ import type { Client } from "discord.js";
 
 const POLL_INTERVAL_MS = 5 * MS_IN_ONE_MINUTE;
 const WATCH_KEY = "last_backup_key";
-const WORLDS_PREFIX = "worlds/";
+const ARCHIVES_PREFIX = "archives/";
 
 let timer: NodeJS.Timeout | null = null;
 
@@ -31,7 +31,8 @@ export function isMinecraftBackupWatchConfigured(): boolean {
 
 function latestBackup(objects: _Object[]): _Object | null {
   const backups = objects.filter(
-    (obj) => obj.Key?.startsWith(WORLDS_PREFIX) && obj.Key.endsWith(".tar.gz"),
+    (obj) =>
+      obj.Key?.startsWith(ARCHIVES_PREFIX) && obj.Key.endsWith(".tar.gz"),
   );
   if (backups.length === 0) return null;
 
@@ -47,7 +48,7 @@ async function pollBackups(client: Client): Promise<void> {
 
   try {
     const res = await s3Client().send(
-      new ListObjectsV2Command({ Bucket: bucket, Prefix: WORLDS_PREFIX }),
+      new ListObjectsV2Command({ Bucket: bucket, Prefix: ARCHIVES_PREFIX }),
     );
 
     const newest = latestBackup(res.Contents ?? []);
@@ -63,13 +64,12 @@ async function pollBackups(client: Client): Promise<void> {
     if (newest.Key === previous) return;
 
     setMinecraftWatchValue(WATCH_KEY, newest.Key);
-    const stamp = newest.Key.replace(WORLDS_PREFIX, "").replace(
-      /^world-/,
-      "",
-    ).replace(/\.tar\.gz$/, "");
+    const stamp = newest.Key.replace(ARCHIVES_PREFIX, "")
+      .replace(/^data-/, "")
+      .replace(/\.tar\.gz$/, "");
     await notifyMinecraftChannel(
       client,
-      `**World backup saved** → \`s3://${bucket}/${newest.Key}\`${stamp ? ` (${stamp} UTC)` : ""}`,
+      `**S3 backup saved** → \`s3://${bucket}/${newest.Key}\`${stamp ? ` (${stamp} UTC)` : ""}`,
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);

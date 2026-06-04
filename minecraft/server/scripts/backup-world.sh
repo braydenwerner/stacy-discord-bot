@@ -18,11 +18,11 @@ if [[ ! -d "${WORLD_DIR}" ]]; then
 fi
 
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
-ARCHIVE="/tmp/minecraft-world-${STAMP}.tar.gz"
+ARCHIVE="/tmp/mc-data-${STAMP}.tar.gz"
 
 tar -czf "${ARCHIVE}" -C "${SERVER_DIR}" world world_nether world_the_end 2>/dev/null \
   || tar -czf "${ARCHIVE}" -C "${SERVER_DIR}" world
 
-aws s3 cp "${ARCHIVE}" "s3://${BACKUP_BUCKET}/worlds/world-${STAMP}.tar.gz" --region "${AWS_REGION}"
+aws s3 cp "${ARCHIVE}" "s3://${BACKUP_BUCKET}/archives/data-${STAMP}.tar.gz" --region "${AWS_REGION}"
 rm -f "${ARCHIVE}"
-echo "Backed up world to s3://${BACKUP_BUCKET}/worlds/world-${STAMP}.tar.gz"
+echo "Backed up data to s3://${BACKUP_BUCKET}/archives/data-${STAMP}.tar.gz"

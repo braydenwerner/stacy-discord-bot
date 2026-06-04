@@ -44,7 +44,7 @@ def main() -> None:
         sys.exit(1)
 
     params = load_params(params_path)
-    project = params.get("ProjectName", "stacy-minecraft")
+    project = params.get("ProjectName", "stacy-mc")
     region = (
         params.get("AwsRegion")
         or subprocess.check_output(
@@ -59,11 +59,11 @@ def main() -> None:
     ).strip()
 
     replacements = {
-        "__BACKUP_BUCKET__": f"{project}-world-backups-{account_id}",
+        "__BACKUP_BUCKET__": f"{project}-data-backups-{account_id}",
         "__AWS_REGION__": region,
-        "__MINECRAFT_VERSION__": params.get("MinecraftVersion", "1.21.1"),
+        "__MC_VERSION__": params.get("McVersion", "1.21.1"),
         "__JVM_MAX_MEMORY__": params.get("JvmMaxMemory", "6G"),
-        "__MINECRAFT_PORT__": params.get("MinecraftPort", "25565"),
+        "__MC_PORT__": params.get("McPort", "25565"),
         "__IDLE_SHUTDOWN_MINUTES__": params.get("IdleShutdownMinutes", "30"),
         "__BACKUP_INTERVAL_HOURS__": params.get("BackupIntervalHours", "6"),
     }

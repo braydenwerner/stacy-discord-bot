@@ -2,7 +2,7 @@
 set -euo pipefail
 
 MC_ROOT="$(cd "$(dirname "$0")" && pwd)"
-STACK_NAME="${STACK_NAME:-stacy-minecraft}"
+STACK_NAME="${STACK_NAME:-stacy-mc}"
 PARAMS="${MC_ROOT}/cloudformation/parameters.json"
 REGION="${AWS_REGION:-$(aws configure get region 2>/dev/null || echo us-east-1)}"
 
@@ -31,19 +31,23 @@ PY
 
 python3 "${MC_ROOT}/pack.py" "${PARAMS}"
 
-PARAM_OVERRIDES="$(python3 - <<PY "${PARAMS}"
-import json, shlex, sys
+PARAM_OVERRIDES=()
+while IFS= read -r line; do
+  PARAM_OVERRIDES+=("$line")
+done < <(python3 - <<PY "${PARAMS}"
+import json, sys
 CFN_KEYS = {
-    "ProjectName", "InstanceType", "RootVolumeSizeGb", "MinecraftPort",
+    "ProjectName", "InstanceType", "RootVolumeSizeGb", "McPort",
     "AllowedCidrBlocks", "SshCidrBlocks", "KeyName", "AllocateEip",
     "SubnetId", "VpcId", "CreateBotIamUser", "EnableScheduledStart",
     "ScheduledStartCron", "ScheduledStartTimezone", "BackupRetentionDays",
 }
 params = json.load(open(sys.argv[1]))
-filtered = [p for p in params if p["ParameterKey"] in CFN_KEYS]
-print(" ".join(shlex.quote(f"{p['ParameterKey']}={p['ParameterValue']}") for p in filtered))
+for p in params:
+    if p["ParameterKey"] in CFN_KEYS:
+        print(f"{p['ParameterKey']}={p['ParameterValue']}")
 PY
-)"
+)
 
 echo "Validating packaged template..."
 aws cloudformation validate-template \
@@ -54,7 +58,7 @@ echo "Deploying stack ${STACK_NAME} in ${REGION}..."
 aws cloudformation deploy \
   --stack-name "${STACK_NAME}" \
   --template-file "${MC_ROOT}/cloudformation/packaged-template.yaml" \
-  --parameter-overrides ${PARAM_OVERRIDES} \
+  --parameter-overrides "${PARAM_OVERRIDES[@]}" \
   --capabilities CAPABILITY_NAMED_IAM \
   --region "${REGION}" \
   --no-fail-on-empty-changeset

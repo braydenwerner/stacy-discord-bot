@@ -176,3 +176,7 @@ dist
 
 # SQLite data
 data/
+
+# CloudFormation
+minecraft/cloudformation/packaged-template.yaml
+minecraft/cloudformation/parameters.json

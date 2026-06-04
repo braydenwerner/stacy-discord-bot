@@ -1,0 +1,82 @@
+[
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "stacy-minecraft"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "c6i.xlarge"
+  },
+  {
+    "ParameterKey": "RootVolumeSizeGb",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "MinecraftPort",
+    "ParameterValue": "25565"
+  },
+  {
+    "ParameterKey": "AllowedCidrBlocks",
+    "ParameterValue": "0.0.0.0/0"
+  },
+  {
+    "ParameterKey": "SshCidrBlocks",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "AllocateEip",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "REPLACE_ME"
+  },
+  {
+    "ParameterKey": "SubnetId",
+    "ParameterValue": "REPLACE_ME"
+  },
+  {
+    "ParameterKey": "CreateBotIamUser",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "EnableScheduledStart",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "ScheduledStartCron",
+    "ParameterValue": "cron(0 18 * * ? *)"
+  },
+  {
+    "ParameterKey": "ScheduledStartTimezone",
+    "ParameterValue": "UTC"
+  },
+  {
+    "ParameterKey": "BackupRetentionDays",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "MinecraftVersion",
+    "ParameterValue": "1.21.1"
+  },
+  {
+    "ParameterKey": "JvmMaxMemory",
+    "ParameterValue": "6G"
+  },
+  {
+    "ParameterKey": "IdleShutdownMinutes",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "BackupIntervalHours",
+    "ParameterValue": "6"
+  },
+  {
+    "ParameterKey": "AwsRegion",
+    "ParameterValue": "us-east-1"
+  }
+]

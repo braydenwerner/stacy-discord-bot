@@ -16,6 +16,10 @@ export const EMBED_DESCRIPTION_MAX_LENGTH = 2048;
 
 export const EQUALITY_ROLE_NAME = "Equality";
 
+/** Discord channel for Minecraft S3 backup and server lifecycle notifications. */
+export const MINECRAFT_NOTIFY_CHANNEL_ID =
+  process.env.MINECRAFT_NOTIFY_CHANNEL_ID ?? "1511949691858718771";
+
 export const emojis = {
   success: "✅",
   error: "❌",

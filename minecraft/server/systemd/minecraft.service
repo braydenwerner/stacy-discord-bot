@@ -1,0 +1,23 @@
+[Unit]
+Description=Paper Minecraft Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=minecraft
+Group=minecraft
+WorkingDirectory=/opt/minecraft/server
+EnvironmentFile=-/etc/sysconfig/minecraft-idle
+
+ExecStart=/usr/bin/java @/opt/minecraft/jvm-flags.conf -jar server.jar nogui
+ExecStop=/opt/minecraft/scripts/stop-server.sh
+ExecStopPost=/opt/minecraft/scripts/post-stop-backup.sh
+
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=120
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target

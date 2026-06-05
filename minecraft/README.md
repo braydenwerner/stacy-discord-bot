@@ -35,8 +35,10 @@ After deploy, set Pi `.env` from stack outputs (`InstanceId`, `BackupBucket`, bo
 ## Server automation
 
 - **systemd** — Paper with Aikar JVM flags
-- **cron** every 5 min — idle shutdown after 30 min with no players
-- **cron** every `BackupIntervalHours` (default 6) — S3 world backup while running
+- **cron** every 5 min — idle shutdown after 30 min with no players (writes `events/idle-shutdown-*.json` to S3 for Discord alerts)
+- **cron** every `BackupIntervalHours` (default 6) — S3 world backup while running (`BACKUP_SOURCE=periodic`)
+
+Stacy polls S3 every 2 minutes for new backups and idle-shutdown events, and EC2 state every 2 minutes. Messages go to `MINECRAFT_NOTIFY_CHANNEL_ID` on the Pi.
 
 Edit `server/` scripts, then re-run `./deploy.sh`.
 

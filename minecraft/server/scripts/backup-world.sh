@@ -24,11 +24,14 @@ fi
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 ARCHIVE="/tmp/mc-data-${STAMP}.tar.gz"
 S3_KEY="${ARCHIVE_PREFIX}${STAMP}.tar.gz"
+BACKUP_SOURCE="${BACKUP_SOURCE:-manual}"
 
 tar -czf "${ARCHIVE}" -C "${SERVER_DIR}" world world_nether world_the_end 2>/dev/null \
   || tar -czf "${ARCHIVE}" -C "${SERVER_DIR}" world
 
-aws s3 cp "${ARCHIVE}" "s3://${BACKUP_BUCKET}/${S3_KEY}" --region "${AWS_REGION}"
+aws s3 cp "${ARCHIVE}" "s3://${BACKUP_BUCKET}/${S3_KEY}" \
+  --metadata "source=${BACKUP_SOURCE}" \
+  --region "${AWS_REGION}"
 rm -f "${ARCHIVE}"
 echo "Backed up data to s3://${BACKUP_BUCKET}/${S3_KEY}"
 

@@ -8,6 +8,7 @@ import {
   isMinecraftConfigured,
   type MinecraftServerState,
 } from "@/utils/minecraft/minecraftClient";
+import { recentIdleShutdownMs } from "@/utils/minecraft/minecraftEventWatcher";
 import { notifyMinecraftChannel } from "@/utils/minecraft/minecraftNotify";
 import type { Client } from "discord.js";
 
@@ -35,10 +36,16 @@ function formatStateMessage(
   }
 
   if (previous !== "stopping" && current === "stopping") {
+    if (recentIdleShutdownMs()) {
+      return null;
+    }
     return "**Minecraft EC2** is shutting down…";
   }
 
   if (previous !== "stopped" && current === "stopped") {
+    if (recentIdleShutdownMs()) {
+      return "**Minecraft idle shutdown complete** — EC2 halted; compute billing paused until the next start.";
+    }
     return "**Minecraft EC2 stopped** — compute billing paused until the next start.";
   }
 

@@ -246,13 +246,17 @@ Resources:
                   - ec2:DescribeInstanceStatus
                 Resource: "*"
               - Effect: Allow
-                Action: s3:ListBucket
+                Action:
+                  - s3:ListBucket
                 Resource: !GetAtt McBackupsBucket.Arn
                 Condition:
                   StringLike:
-                    s3:prefix: archives/*
+                    s3:prefix:
+                      - archives/*
+                      - events/*
               - Effect: Allow
-                Action: s3:GetObject
+                Action:
+                  - s3:GetObject
                 Resource: !Sub "${McBackupsBucket.Arn}/*"
       Tags:
         - Key: Project

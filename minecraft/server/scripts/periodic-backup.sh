@@ -21,4 +21,4 @@ if [[ -f "${RCON_PASSWORD_FILE}" ]]; then
   sleep 5
 fi
 
-exec /opt/minecraft/scripts/backup-world.sh "${BACKUP_BUCKET}" "${AWS_REGION:-us-east-1}"
+exec env BACKUP_SOURCE=periodic /opt/minecraft/scripts/backup-world.sh "${BACKUP_BUCKET}" "${AWS_REGION:-us-east-1}"

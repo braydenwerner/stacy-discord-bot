@@ -55,6 +55,15 @@ fi
 
 echo "No players for ${ELAPSED} minutes (threshold ${IDLE_MINUTES}). Shutting down."
 
+# Notify Stacy via S3 event marker (polled by the Discord bot).
+if [[ -n "${BACKUP_BUCKET:-}" ]]; then
+  IDLE_STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
+  printf '{"type":"idle-shutdown","idleMinutes":%s,"elapsedMinutes":%s,"at":"%s"}\n' \
+    "${IDLE_MINUTES}" "${ELAPSED}" "${IDLE_STAMP}" \
+    | aws s3 cp - "s3://${BACKUP_BUCKET}/events/idle-shutdown-${IDLE_STAMP}.json" \
+      --region "${AWS_REGION:-us-east-1}" || true
+fi
+
 # Graceful stop via RCON
 mcrcon -H "${RCON_HOST}" -P "${RCON_PORT}" -p "${RCON_PASS}" "stop" 2>/dev/null || true
 
@@ -68,7 +77,7 @@ done
 
 # Backup before halt (systemd ExecStopPost also runs backup; this is a safety net)
 if [[ -x /opt/minecraft/scripts/backup-world.sh ]]; then
-  /opt/minecraft/scripts/backup-world.sh "${BACKUP_BUCKET:-}" "${AWS_REGION:-us-east-1}" || true
+  env BACKUP_SOURCE=idle /opt/minecraft/scripts/backup-world.sh "${BACKUP_BUCKET:-}" "${AWS_REGION:-us-east-1}" || true
 fi
 
 sudo shutdown -h now

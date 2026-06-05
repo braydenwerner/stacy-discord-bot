@@ -53,7 +53,10 @@ pnpm run start
 | `MINECRAFT_NOTIFY_CHANNEL_ID` | no | Channel for backup + lifecycle notifications (default: `1511949691858718771`) |
 | `MINECRAFT_BACKUP_BUCKET` | no* | S3 backup bucket for the backup watcher |
 
-\*Required together for `/minecraft` and `manageMinecraft`. Set `MINECRAFT_BACKUP_BUCKET` (CloudFormation `BackupBucket` output) for S3 backup notifications. Lifecycle and backup alerts post only to `MINECRAFT_NOTIFY_CHANNEL_ID` (default `1511949691858718771`).
+\*Required together for `/minecraft` and `manageMinecraft`. Set `MINECRAFT_BACKUP_BUCKET` (CloudFormation `BackupBucket` output) for S3 backup notifications. Stacy posts to `MINECRAFT_NOTIFY_CHANNEL_ID` (default `1511949691858718771`) when:
+
+- EC2 starts/stops (including **idle shutdown** after no players)
+- **Periodic** and idle-shutdown **S3 world backups** complete (polled every 2 minutes)
 
 ## Talking to Stacy
 

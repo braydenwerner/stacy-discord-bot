@@ -5,11 +5,19 @@
   },
   {
     "ParameterKey": "InstanceType",
-    "ParameterValue": "c6i.xlarge"
+    "ParameterValue": "c6i.2xlarge"
   },
   {
     "ParameterKey": "RootVolumeSizeGb",
     "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "EbsIops",
+    "ParameterValue": "5000"
+  },
+  {
+    "ParameterKey": "EbsThroughputMbps",
+    "ParameterValue": "250"
   },
   {
     "ParameterKey": "McPort",
@@ -21,11 +29,11 @@
   },
   {
     "ParameterKey": "SshCidrBlocks",
-    "ParameterValue": ""
+    "ParameterValue": "YOUR.PUBLIC.IP/32"
   },
   {
     "ParameterKey": "KeyName",
-    "ParameterValue": ""
+    "ParameterValue": "stacy-mc"
   },
   {
     "ParameterKey": "AllocateEip",
@@ -56,7 +64,7 @@
     "ParameterValue": "UTC"
   },
   {
-    "ParameterKey": "BackupRetentionDays",
+    "ParameterKey": "BackupKeepCount",
     "ParameterValue": "30"
   },
   {
@@ -78,5 +86,9 @@
   {
     "ParameterKey": "AwsRegion",
     "ParameterValue": "us-east-1"
+  },
+  {
+    "ParameterKey": "ConnectHost",
+    "ParameterValue": "mc.example.com"
   }
 ]

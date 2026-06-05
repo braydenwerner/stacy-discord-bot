@@ -26,11 +26,11 @@ chmod +x deploy.sh
 ./deploy.sh
 ```
 
-After deploy, set Pi `.env` from stack outputs (`InstanceId`, `McHost`, `BackupBucket`, bot IAM keys). See main [README](../README.md) for Stacy env vars.
+After deploy, set Pi `.env` from stack outputs (`InstanceId`, `BackupBucket`, bot IAM keys) and `ConnectHost` in `parameters.json` for the player hostname (`mc.motelrate.com`). `./deploy.sh` writes `instance.env` automatically. See main [README](../README.md) for Stacy env vars.
 
 ## Parameters
 
-`cloudformation/parameters.json` holds CloudFormation stack params plus user-data-only keys (`McVersion`, `JvmMaxMemory`, `IdleShutdownMinutes`, `BackupIntervalHours`, `AwsRegion`). `EnableScheduledStart` defaults to **`false`**.
+`cloudformation/parameters.json` holds CloudFormation stack params plus user-data-only keys (`McVersion`, `JvmMaxMemory`, `IdleShutdownMinutes`, `BackupIntervalHours`, `BackupKeepCount`, `ConnectHost`, `AwsRegion`). `EnableScheduledStart` defaults to **`false`**. Set **`ConnectHost`** to your DNS name (e.g. `mc.motelrate.com` → Elastic IP A record).
 
 ## Server automation
 

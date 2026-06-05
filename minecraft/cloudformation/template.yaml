@@ -17,6 +17,16 @@ Parameters:
     Default: 30
     Description: Root gp3 volume size in GB.
 
+  EbsIops:
+    Type: Number
+    Default: 5000
+    Description: Provisioned gp3 IOPS for the root volume.
+
+  EbsThroughputMbps:
+    Type: Number
+    Default: 250
+    Description: Provisioned gp3 throughput (MiB/s) for the root volume.
+
   McPort:
     Type: Number
     Default: 25565
@@ -71,10 +81,6 @@ Parameters:
     Type: String
     Default: UTC
 
-  BackupRetentionDays:
-    Type: Number
-    Default: 30
-
 Conditions:
   HasSshAccess: !Not [!Equals [!Ref SshCidrBlocks, ""]]
   HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
@@ -86,7 +92,7 @@ Resources:
   McBackupsBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub "${ProjectName}-data-backups-${AWS::AccountId}"
+      BucketName: !Sub "${ProjectName}-data-backups-${AWS::Region}-${AWS::AccountId}"
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -98,12 +104,6 @@ Resources:
         RestrictPublicBuckets: true
       VersioningConfiguration:
         Status: Enabled
-      LifecycleConfiguration:
-        Rules:
-          - Id: expire-old-backups
-            Status: Enabled
-            ExpirationInDays: !Ref BackupRetentionDays
-            NoncurrentVersionExpirationInDays: 7
       Tags:
         - Key: Project
           Value: !Ref ProjectName
@@ -160,7 +160,16 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
+                  - s3:ListBucket
+                Resource: !GetAtt McBackupsBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix:
+                      - archives/*
+              - Effect: Allow
+                Action:
                   - s3:PutObject
+                  - s3:DeleteObject
                   - s3:AbortMultipartUpload
                 Resource: !Sub "${McBackupsBucket.Arn}/*"
       Tags:
@@ -190,6 +199,8 @@ Resources:
           Ebs:
             VolumeType: gp3
             VolumeSize: !Ref RootVolumeSizeGb
+            Iops: !Ref EbsIops
+            Throughput: !Ref EbsThroughputMbps
             Encrypted: true
       MetadataOptions:
         HttpEndpoint: enabled
@@ -298,7 +309,7 @@ Outputs:
     Value: !Ref McInstance
 
   McHost:
-    Description: Public connect host for the bot (MINECRAFT_SERVER_HOST).
+    Description: Elastic IP (DNS A record target). Player hostname is ConnectHost in parameters.json.
     Value: !If
       - DoAllocateEip
       - !Ref McEip

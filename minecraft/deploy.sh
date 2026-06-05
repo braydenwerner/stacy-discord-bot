@@ -37,10 +37,10 @@ while IFS= read -r line; do
 done < <(python3 - <<PY "${PARAMS}"
 import json, sys
 CFN_KEYS = {
-    "ProjectName", "InstanceType", "RootVolumeSizeGb", "McPort",
+    "ProjectName", "InstanceType", "RootVolumeSizeGb", "EbsIops", "EbsThroughputMbps", "McPort",
     "AllowedCidrBlocks", "SshCidrBlocks", "KeyName", "AllocateEip",
     "SubnetId", "VpcId", "CreateBotIamUser", "EnableScheduledStart",
-    "ScheduledStartCron", "ScheduledStartTimezone", "BackupRetentionDays",
+    "ScheduledStartCron", "ScheduledStartTimezone",
 }
 params = json.load(open(sys.argv[1]))
 for p in params:
@@ -70,3 +70,38 @@ aws cloudformation describe-stacks \
   --region "${REGION}" \
   --query "Stacks[0].Outputs" \
   --output table
+
+INSTANCE_ENV="${MC_ROOT}/instance.env"
+env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY python3 - <<PY "${PARAMS}" "${INSTANCE_ENV}" "${STACK_NAME}" "${REGION}"
+import json, subprocess, sys
+
+params_path, env_path, stack, region = sys.argv[1:5]
+params = {p["ParameterKey"]: p.get("ParameterValue", "") for p in json.load(open(params_path))}
+
+def stack_out(key: str) -> str:
+    return subprocess.check_output(
+        [
+            "aws", "cloudformation", "describe-stacks",
+            "--stack-name", stack,
+            "--region", region,
+            "--query", f"Stacks[0].Outputs[?OutputKey=='{key}'].OutputValue | [0]",
+            "--output", "text",
+        ],
+        text=True,
+    ).strip()
+
+instance_id = stack_out("InstanceId")
+mc_host = params.get("ConnectHost") or stack_out("McHost")
+mc_port = params.get("McPort") or stack_out("McPort") or "25565"
+aws_region = params.get("AwsRegion") or stack_out("AwsRegion") or region
+
+lines = [
+    f"AWS_REGION={aws_region}",
+    f"INSTANCE_ID={instance_id}",
+    f"MC_HOST={mc_host}",
+    f"MC_PORT={mc_port}",
+    "",
+]
+open(env_path, "w").write("\n".join(lines))
+print(f"Wrote {env_path} (MC_HOST={mc_host})")
+PY

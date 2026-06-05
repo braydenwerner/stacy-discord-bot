@@ -23,7 +23,7 @@ declare global {
       AWS_SECRET_ACCESS_KEY?: string;
       /** EC2 instance ID for the Minecraft server */
       MINECRAFT_INSTANCE_ID?: string;
-      /** Public host for connect string (Elastic IP); falls back to instance public IP */
+      /** Public connect hostname (e.g. mc.motelrate.com); falls back to instance public IP */
       MINECRAFT_SERVER_HOST?: string;
       /** Minecraft port (default 25565) */
       MINECRAFT_PORT?: string;

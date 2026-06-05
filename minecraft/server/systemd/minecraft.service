@@ -1,5 +1,5 @@
 [Unit]
-Description=Paper Minecraft Server
+Description=Minecraft Server
 After=network-online.target
 Wants=network-online.target
 
@@ -10,6 +10,7 @@ Group=minecraft
 WorkingDirectory=/opt/minecraft/server
 EnvironmentFile=-/etc/sysconfig/minecraft-idle
 
+ExecStartPre=/opt/minecraft/scripts/apply-paper-tuning.sh
 ExecStart=/usr/bin/java @/opt/minecraft/jvm-flags.conf -jar server.jar nogui
 ExecStop=/opt/minecraft/scripts/stop-server.sh
 ExecStopPost=/opt/minecraft/scripts/post-stop-backup.sh

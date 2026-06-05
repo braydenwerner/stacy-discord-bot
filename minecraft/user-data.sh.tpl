@@ -1,5 +1,5 @@
 #!/bin/bash
-# Amazon Linux 2023 first-boot: install Paper, systemd service, idle auto-shutdown.
+# Amazon Linux 2023 first-boot: install Minecraft, systemd service, idle auto-shutdown.
 set -euo pipefail
 exec > /var/log/minecraft-user-data.log 2>&1
 
@@ -9,6 +9,7 @@ MC_VERSION="__MC_VERSION__"
 JVM_MAX="__JVM_MAX_MEMORY__"
 MC_PORT="__MC_PORT__"
 IDLE_MINUTES="__IDLE_SHUTDOWN_MINUTES__"
+BACKUP_KEEP_COUNT="__BACKUP_KEEP_COUNT__"
 
 install -d -m 755 /opt/minecraft/scripts
 cat > /opt/minecraft/scripts/backup-world.sh <<'BACKUP_EOF'
@@ -29,12 +30,24 @@ POST_EOF
 cat > /opt/minecraft/scripts/install-server.sh <<'INSTALL_EOF'
 __INSTALL_SCRIPT__
 INSTALL_EOF
+cat > /opt/minecraft/scripts/apply-paper-tuning.sh <<'TUNING_EOF'
+__APPLY_PAPER_TUNING_SCRIPT__
+TUNING_EOF
 chmod +x /opt/minecraft/scripts/*.sh
+
+if [[ -n "__SERVER_ICON_B64__" ]]; then
+  echo "__SERVER_ICON_B64__" | base64 -d > /opt/minecraft/server-icon.png
+  chmod 644 /opt/minecraft/server-icon.png
+fi
+
+cat > /opt/minecraft/whitelist.json <<'WHITELIST_EOF'
+__WHITELIST_JSON__
+WHITELIST_EOF
 
 id -u minecraft &>/dev/null || useradd -r -m -d /opt/minecraft -s /sbin/nologin minecraft
 
 /opt/minecraft/scripts/install-server.sh \
-  "${MC_VERSION}" "${JVM_MAX}" "${MC_PORT}" "${BACKUP_BUCKET}" "${AWS_REGION}" "${IDLE_MINUTES}"
+  "${MC_VERSION}" "${JVM_MAX}" "${MC_PORT}" "${BACKUP_BUCKET}" "${AWS_REGION}" "${IDLE_MINUTES}" "${BACKUP_KEEP_COUNT}"
 
 chown -R minecraft:minecraft /opt/minecraft
 

@@ -48,7 +48,7 @@ pnpm run start
 | `AWS_ACCESS_KEY_ID` | no* | IAM user key for `/minecraft` (from CloudFormation output) |
 | `AWS_SECRET_ACCESS_KEY` | no* | IAM secret for Minecraft EC2 control |
 | `MINECRAFT_INSTANCE_ID` | no* | EC2 instance ID to start/stop |
-| `MINECRAFT_SERVER_HOST` | no | Elastic IP or hostname for connect string (defaults to instance public IP) |
+| `MINECRAFT_SERVER_HOST` | no | Player connect hostname (e.g. `mc.motelrate.com`; defaults to instance public IP) |
 | `MINECRAFT_PORT` | no | Minecraft port (default `25565`) |
 | `MINECRAFT_NOTIFY_CHANNEL_ID` | no | Channel for backup + lifecycle notifications (default: `1511949691858718771`) |
 | `MINECRAFT_BACKUP_BUCKET` | no* | S3 backup bucket for the backup watcher |

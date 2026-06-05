@@ -180,3 +180,6 @@ data/
 # CloudFormation
 minecraft/cloudformation/packaged-template.yaml
 minecraft/cloudformation/parameters.json
+minecraft/instance.env
+minecraft/stacy-mc
+minecraft/*.pem

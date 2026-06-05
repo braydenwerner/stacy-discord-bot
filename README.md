@@ -51,7 +51,8 @@ pnpm run start
 | `MINECRAFT_SERVER_HOST` | no | Player connect hostname (e.g. `mc.motelrate.com`; defaults to instance public IP) |
 | `MINECRAFT_PORT` | no | Minecraft port (default `25565`) |
 | `MINECRAFT_NOTIFY_CHANNEL_ID` | no | Channel for backup + lifecycle notifications (default: `1511949691858718771`) |
-| `MINECRAFT_BACKUP_BUCKET` | no* | S3 backup bucket for the backup watcher |
+| `MINECRAFT_BACKUP_BUCKET` | no* | S3 backup bucket for the backup watcher and `/minecraft backups` |
+| `MINECRAFT_SSH_KEY_PATH` | no | Fallback path to EC2 SSH private key for logs/health when SSM is unavailable |
 
 \*Required together for `/minecraft` and `manageMinecraft`. Set `MINECRAFT_BACKUP_BUCKET` (CloudFormation `BackupBucket` output) for S3 backup notifications. Stacy posts to `MINECRAFT_NOTIFY_CHANNEL_ID` (default `1511949691858718771`) when:
 
@@ -216,7 +217,7 @@ Registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and invoked fro
 
 | Tool | Parameters | What it does |
 |------|------------|--------------|
-| `manageMinecraft` | `action`: `start` \| `stop` \| `status` | Start/stop/describe AWS EC2 Minecraft server (needs AWS env vars) |
+| `manageMinecraft` | `action`: `start` \| `stop` \| `status` \| `health` \| `logs` \| `backups` \| `metrics`; optional `logLines` | EC2 control and observability (CPU, IOPS, logs, S3 backups) |
 
 #### Web — anyone
 
@@ -244,7 +245,7 @@ Deploy with `pnpm run deployCommands`.
 | `/people` | Equality | List contacts (embed) |
 | `/contact` | Equality | `add`, `remove`, `update` |
 | `/group` | Equality | `create`, `add-member`, `remove-member`, `delete`, `list`, `ping` |
-| `/minecraft` | start/status: everyone; stop: Equality | Wake or check AWS Minecraft EC2; stop halts compute billing |
+| `/minecraft` | start/status/health/logs/backups/metrics: everyone; stop: Equality | EC2 control + observability (port health, logs, S3 backups, CloudWatch metrics) |
 | `/tone` | Bot owner | `nice-add`, `nice-remove`, `snarky-add` (alias for remove), `list` |
 
 **Directory admin** (contacts, groups, `/people`): **Equality** role, Discord **Administrator** or **Manage Server** permission, or bot owner (`STACY_OWNER_ID`).

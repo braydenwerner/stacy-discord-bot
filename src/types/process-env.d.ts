@@ -31,6 +31,8 @@ declare global {
       MINECRAFT_NOTIFY_CHANNEL_ID?: string;
       /** S3 bucket for world backups (backup watcher) */
       MINECRAFT_BACKUP_BUCKET?: string;
+      /** Optional SSH key for EC2 logs/health when SSM is unavailable */
+      MINECRAFT_SSH_KEY_PATH?: string;
     }
   }
 }

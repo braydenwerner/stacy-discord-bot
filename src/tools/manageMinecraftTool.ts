@@ -9,6 +9,7 @@ import {
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
+import { runMinecraftObserve } from "@/utils/minecraft/runMinecraftObserve";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { toolError, toolOk } from "@/utils/toolResult";
@@ -21,15 +22,33 @@ const NOT_CONFIGURED =
 export const manageMinecraftTool = new DynamicStructuredTool({
   name: "manageMinecraft",
   description:
-    "Start, stop, or check status of the AWS Minecraft server. " +
-    "Use when someone asks to start/wake/boot the minecraft server, check if it is up, or stop it. " +
-    "Anyone can start or check status; stop requires Equality role, server admin, or bot owner.",
+    "Control or inspect the AWS Minecraft server. " +
+    "Use start/wake/boot, stop/shut down, status (EC2 only), health (port + service + players), " +
+    "logs (recent Paper/system logs), backups (S3 archive list), or metrics (CPU, EBS IOPS/throughput, network, load/mem/disk). " +
+    "Anyone can start or inspect; stop requires Equality role, server admin, or bot owner.",
   schema: z.object({
     action: z
-      .enum(["start", "stop", "status"])
-      .describe("start = wake EC2, stop = halt instance, status = current state"),
+      .enum([
+        "start",
+        "stop",
+        "status",
+        "health",
+        "logs",
+        "backups",
+        "metrics",
+      ])
+      .describe(
+        "start/stop/status = EC2 control; health/logs/backups/metrics = observability",
+      ),
+    logLines: z
+      .number()
+      .int()
+      .min(5)
+      .max(60)
+      .optional()
+      .describe("For logs: number of lines per section (default 25)"),
   }),
-  func: async ({ action }, _runManager, config) => {
+  func: async ({ action, logLines }, _runManager, config) => {
     const message = getToolMessage(config);
 
     if (!isMinecraftConfigured()) {
@@ -49,6 +68,17 @@ export const manageMinecraftTool = new DynamicStructuredTool({
         const before = await getMinecraftServerState();
         const after = await startMinecraftServer();
         const text = formatMinecraftStartResult(before, after);
+        await message.reply(text);
+        return toolOk(text);
+      }
+
+      if (
+        action === "health" ||
+        action === "logs" ||
+        action === "backups" ||
+        action === "metrics"
+      ) {
+        const text = await runMinecraftObserve(action, { logLines });
         await message.reply(text);
         return toolOk(text);
       }

@@ -40,6 +40,8 @@ After deploy, set Pi `.env` from stack outputs (`InstanceId`, `BackupBucket`, bo
 
 Stacy polls S3 every 2 minutes for new backups and idle-shutdown events, and EC2 state every 2 minutes. Messages go to `MINECRAFT_NOTIFY_CHANNEL_ID` on the Pi.
 
+**Observability** (via `/minecraft` or `manageMinecraft`): `health`, `logs`, `backups`, `metrics`. Metrics use CloudWatch (CPU, EBS IOPS/throughput, network) plus SSM for load/memory/disk on the instance. Redeploy the CloudFormation stack (or update the bot IAM user) for `cloudwatch:GetMetricData`, `ec2:DescribeVolumes`, and SSM permissions.
+
 Edit `server/` scripts, then re-run `./deploy.sh`.
 
 ## Destroy

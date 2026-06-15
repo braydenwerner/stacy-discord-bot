@@ -3,9 +3,9 @@ import {
   formatMinecraftStatus,
   formatMinecraftStopResult,
 } from "@/utils/minecraft/formatServerStatus";
+import { getMinecraftConfigError } from "@/utils/minecraft/minecraftConfig";
 import {
   getMinecraftServerState,
-  isMinecraftConfigured,
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
@@ -15,9 +15,6 @@ import { getToolMessage } from "@/utils/getToolMessage";
 import { toolError, toolOk } from "@/utils/toolResult";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-
-const NOT_CONFIGURED =
-  "Minecraft server control is not configured on this bot host.";
 
 export const manageMinecraftTool = new DynamicStructuredTool({
   name: "manageMinecraft",
@@ -51,9 +48,10 @@ export const manageMinecraftTool = new DynamicStructuredTool({
   func: async ({ action, logLines }, _runManager, config) => {
     const message = getToolMessage(config);
 
-    if (!isMinecraftConfigured()) {
-      await message.reply(NOT_CONFIGURED);
-      return toolError(NOT_CONFIGURED);
+    const configError = getMinecraftConfigError();
+    if (configError) {
+      await message.reply(configError);
+      return toolError(configError);
     }
 
     try {

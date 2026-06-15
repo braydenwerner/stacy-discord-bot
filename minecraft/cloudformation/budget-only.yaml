@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Monthly AWS cost budget for Stacy usage tracking (deploy with admin credentials).
+
+Parameters:
+  BudgetName:
+    Type: String
+    Default: stacy-mc-credits
+  BudgetLimitUsd:
+    Type: Number
+    Default: 1000
+    Description: Annual cost cap in USD (align with promo credits pool).
+
+Resources:
+  CreditsBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Ref BudgetName
+        BudgetLimit:
+          Amount: !Ref BudgetLimitUsd
+          Unit: USD
+        BudgetType: COST
+        TimeUnit: ANNUALLY
+        CostTypes:
+          IncludeCredit: true
+          IncludeRefund: true
+          IncludeTax: true
+          IncludeSubscription: true
+          UseBlended: false
+
+Outputs:
+  BudgetName:
+    Description: Set as AWS_BUDGET_NAME on the Pi.
+    Value: !Ref BudgetName

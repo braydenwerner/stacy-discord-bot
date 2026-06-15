@@ -81,6 +81,11 @@ Parameters:
     Type: String
     Default: UTC
 
+  MonthlyBudgetUsd:
+    Type: Number
+    Default: 1000
+    Description: Annual cost budget cap (USD) for Stacy /aws usage tracking.
+
 Conditions:
   HasSshAccess: !Not [!Equals [!Ref SshCidrBlocks, ""]]
   HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
@@ -276,6 +281,19 @@ Resources:
                 Action:
                   - s3:GetObject
                 Resource: !Sub "${McBackupsBucket.Arn}/*"
+              - Effect: Allow
+                Action:
+                  - ce:GetCostAndUsage
+                  - ce:GetCostForecast
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - budgets:ViewBudget
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - sts:GetCallerIdentity
+                Resource: "*"
       Tags:
         - Key: Project
           Value: !Ref ProjectName
@@ -325,6 +343,23 @@ Resources:
         Input: !Sub |
           {"InstanceIds": ["${McInstance}"]}
 
+  CreditsBudget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub "${ProjectName}-credits"
+        BudgetLimit:
+          Amount: !Ref MonthlyBudgetUsd
+          Unit: USD
+        BudgetType: COST
+        TimeUnit: ANNUALLY
+        CostTypes:
+          IncludeCredit: true
+          IncludeRefund: true
+          IncludeTax: true
+          IncludeSubscription: true
+          UseBlended: false
+
 Outputs:
   InstanceId:
     Description: EC2 instance ID for the bot (MINECRAFT_INSTANCE_ID).
@@ -343,6 +378,10 @@ Outputs:
   BackupBucket:
     Description: S3 backup bucket for the bot (MINECRAFT_BACKUP_BUCKET).
     Value: !Ref McBackupsBucket
+
+  BudgetName:
+    Description: AWS Budget name for Stacy /aws usage (AWS_BUDGET_NAME).
+    Value: !Sub "${ProjectName}-credits"
 
   BotIamUser:
     Condition: DoCreateBotUser

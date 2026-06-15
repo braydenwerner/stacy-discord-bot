@@ -27,9 +27,7 @@ function ec2Client(region: string): EC2Client {
   return new EC2Client({ region });
 }
 
-export function isMinecraftConfigured(): boolean {
-  return !!(process.env.MINECRAFT_INSTANCE_ID && process.env.AWS_REGION);
-}
+export { getMinecraftConfigError, isMinecraftConfigured } from "@/utils/minecraft/minecraftConfig";
 
 function connectHost(publicIp: string | null): string | null {
   return process.env.MINECRAFT_SERVER_HOST ?? publicIp;

@@ -1,5 +1,8 @@
 import "dotenv/config";
 
+import { loadMinecraftEnv, logMinecraftConfigStatus } from "@/utils/minecraft/minecraftConfig";
+loadMinecraftEnv();
+
 import { closeDatabase, initDatabase } from "@/db/database";
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
@@ -45,6 +48,7 @@ process.on("SIGTERM", shutdown);
 (async () => {
   try {
     initDatabase();
+    logMinecraftConfigStatus();
 
     // youtubei.js streaming breaks without a cookie (decipher errors). yt-dlp is the
     // reliable path on the Pi; search still uses Innertube.

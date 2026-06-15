@@ -33,6 +33,14 @@ declare global {
       MINECRAFT_BACKUP_BUCKET?: string;
       /** Optional SSH key for EC2 logs/health when SSM is unavailable */
       MINECRAFT_SSH_KEY_PATH?: string;
+      /** AWS Budget name for /aws usage remaining-budget display */
+      AWS_BUDGET_NAME?: string;
+      /** Manual monthly budget cap (USD) when no AWS Budget exists */
+      AWS_MONTHLY_BUDGET_USD?: string;
+      /** Promo credit pool (USD) for estimated remaining credits */
+      AWS_PROMO_CREDIT_USD?: string;
+      /** AWS account ID (optional; auto-detected via STS if omitted) */
+      AWS_ACCOUNT_ID?: string;
     }
   }
 }

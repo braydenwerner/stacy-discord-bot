@@ -3,9 +3,9 @@ import {
   formatMinecraftStatus,
   formatMinecraftStopResult,
 } from "@/utils/minecraft/formatServerStatus";
+import { getMinecraftConfigError } from "@/utils/minecraft/minecraftConfig";
 import {
   getMinecraftServerState,
-  isMinecraftConfigured,
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
@@ -13,9 +13,6 @@ import { runMinecraftObserve } from "@/utils/minecraft/runMinecraftObserve";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
 import { replyDenied, replyError } from "@/utils/slashReply";
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
-
-const NOT_CONFIGURED =
-  "Minecraft server control is not configured. Set `MINECRAFT_INSTANCE_ID` and `AWS_REGION` on the bot host.";
 
 const OBSERVE_SUBCOMMANDS = new Set(["health", "logs", "backups", "metrics"]);
 
@@ -65,8 +62,9 @@ export default {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    if (!isMinecraftConfigured()) {
-      await replyDenied(interaction, NOT_CONFIGURED);
+    const configError = getMinecraftConfigError();
+    if (configError) {
+      await replyDenied(interaction, configError);
       return;
     }
 

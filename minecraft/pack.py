@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import gzip
 import json
 import pathlib
 import subprocess
@@ -83,7 +84,7 @@ def main() -> None:
     )
     content = content.replace("__SERVER_ICON_B64__", icon_b64)
 
-    user_data_b64 = base64.b64encode(content.encode()).decode()
+    user_data_b64 = base64.b64encode(gzip.compress(content.encode())).decode()
     template = TEMPLATE_IN.read_text()
     if "__USERDATA_BASE64__" not in template:
         print("template.yaml missing __USERDATA_BASE64__ placeholder", file=sys.stderr)

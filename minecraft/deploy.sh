@@ -50,9 +50,16 @@ PY
 )
 
 echo "Validating packaged template..."
-aws cloudformation validate-template \
-  --template-body "file://${MC_ROOT}/cloudformation/packaged-template.yaml" \
-  --region "${REGION}" >/dev/null
+PACKAGED="${MC_ROOT}/cloudformation/packaged-template.yaml"
+TEMPLATE_BYTES="$(wc -c < "${PACKAGED}" | tr -d ' ')"
+if (( TEMPLATE_BYTES > 51200 )); then
+  echo "Skipping validate-template (${TEMPLATE_BYTES} bytes > 51KB API limit)." >&2
+  echo "Deploy will still use --template-file (supports templates up to ~460KB)." >&2
+else
+  aws cloudformation validate-template \
+    --template-body "file://${PACKAGED}" \
+    --region "${REGION}" >/dev/null
+fi
 
 echo "Deploying stack ${STACK_NAME} in ${REGION}..."
 aws cloudformation deploy \

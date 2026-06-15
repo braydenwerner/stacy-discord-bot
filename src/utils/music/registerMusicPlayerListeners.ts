@@ -1,5 +1,6 @@
 import { escapeMarkdown } from "@discordjs/builders";
 import type { GuildQueue, Player, Track } from "discord-player";
+import { formatErrorForUser } from "@/utils/formatError";
 import { trackEventPayload } from "@/utils/music/musicMessage";
 import { resolveMusicNotifyChannel } from "@/utils/music/requestChannel";
 import {
@@ -15,23 +16,33 @@ function notifyChannel(queue: GuildQueue, track?: Track | null) {
   return resolveMusicNotifyChannel(queue, track ?? queue.currentTrack);
 }
 
+function sendPlayerNotice(queue: GuildQueue, payload: Parameters<NonNullable<ReturnType<typeof notifyChannel>>["send"]>[0]) {
+  notifyChannel(queue)?.send(payload).catch((error) => {
+    console.error("[music] failed to notify channel:", error);
+  });
+}
+
 export function registerMusicPlayerListeners(player: Player) {
   // this event is emitted whenever discord-player starts to play a track
   player.events.on("playerStart", async (queue, track) => {
     if (queue.metadata.disableEmbeds) return;
-    
-    await ensureNowPlayingPanel(queue);
+
+    try {
+      await ensureNowPlayingPanel(queue);
+    } catch (error) {
+      console.error("[music] playerStart panel failed:", error);
+    }
   });
 
   player.events.on("error", (queue, error) => {
+    console.error("[music] queue error:", error);
     if (queue.metadata.disableEmbeds) return;
-    const channel = notifyChannel(queue);
-    channel?.send({
+    sendPlayerNotice(queue, {
       embeds: [
         {
           color: 1752220,
           title: "Player Error",
-          description: error.message.slice(0, EMBED_DESCRIPTION_MAX_LENGTH),
+          description: formatErrorForUser(error).slice(0, EMBED_DESCRIPTION_MAX_LENGTH),
         },
       ],
     });
@@ -39,12 +50,12 @@ export function registerMusicPlayerListeners(player: Player) {
 
   player.events.on("playerError", (queue, err) => {
     console.error("[music] playerError:", err);
-    notifyChannel(queue)?.send({
+    sendPlayerNotice(queue, {
       embeds: [
         {
           color: 0xff0000,
           title: "Playback Error",
-          description: String(err?.message ?? err).slice(0, EMBED_DESCRIPTION_MAX_LENGTH),
+          description: formatErrorForUser(err).slice(0, EMBED_DESCRIPTION_MAX_LENGTH),
         },
       ],
     });

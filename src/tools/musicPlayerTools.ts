@@ -1,6 +1,7 @@
 import { EMBED_DESCRIPTION_MAX_LENGTH, emojis } from "@/constants/constants";
 // import { lyricsExtractor as lyricsExtractorSuper } from "@discord-player/extractor";
 import { truncateMessage } from "@/utils/truncateMessage";
+import { formatErrorForUser } from "@/utils/formatError";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import type { RunnableConfig } from "@langchain/core/runnables";
 import { QueryType, useMainPlayer, usePlayer, useQueue } from "discord-player";
@@ -104,8 +105,7 @@ export const playSongTool = new DynamicStructuredTool({
         );
       }
     } catch (error) {
-      message.reply(truncateMessage(`Failed to play song. ${error}`));
-      throw error;
+      message.reply(truncateMessage(`Failed to play song. ${formatErrorForUser(error)}`));
     }
 
     return "";
@@ -139,8 +139,7 @@ export const pauseOrResumeSongTool = new DynamicStructuredTool({
         truncateMessage(`${emojis.success} ${message.member}, ${newPauseState ? "paused" : "resumed"} playback`),
       );
     } catch (error) {
-      message.reply(truncateMessage(`Failed to pause/resume song. ${error}`));
-      throw error;
+      message.reply(truncateMessage(`Failed to pause/resume song. ${formatErrorForUser(error)}`));
     }
 
     return "";
@@ -169,8 +168,7 @@ export const skipSongTool = new DynamicStructuredTool({
         truncateMessage(`${emojis.success} ${message.member}, skipped the current song`),
       );
     } catch (error) {
-      message.reply(truncateMessage(`Failed to skip song. ${error}`));
-      throw error;
+      message.reply(truncateMessage(`Failed to skip song. ${formatErrorForUser(error)}`));
     }
 
     return "";
@@ -205,8 +203,7 @@ export const viewSongQueueTool = new DynamicStructuredTool({
       // Show queue in unified context panel
       await createOrUpdateContextPanel(message, queue, "queue");
     } catch (error) {
-      message.reply(truncateMessage(`Failed to view song queue. ${error}`));
-      throw error;
+      message.reply(truncateMessage(`Failed to view song queue. ${formatErrorForUser(error)}`));
     }
 
     return "";
@@ -288,8 +285,7 @@ export const lyricsTool = new DynamicStructuredTool({
         await message.reply({ embeds: [lyricsEmbed] });
       }
     } catch (error) {
-      message.reply(truncateMessage(`Failed to get lyrics. ${error}`));
-      throw error;
+      message.reply(truncateMessage(`Failed to get lyrics. ${formatErrorForUser(error)}`));
     }
 
     return "";

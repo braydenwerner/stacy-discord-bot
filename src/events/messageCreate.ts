@@ -29,6 +29,7 @@ import {
 import { toolResultNeedsFollowUp } from "@/utils/toolResult";
 import { recordUsage } from "@/utils/tokenTracker";
 import { truncateMessage } from "@/utils/truncateMessage";
+import { formatErrorForUser } from "@/utils/formatError";
 import {
   NICE_SYSTEM_PROMPT,
   SNARKY_SYSTEM_PROMPT,
@@ -74,6 +75,24 @@ const readTools: Record<string, DynamicStructuredTool> = {
 };
 
 export default async function messageCreate(
+  client: CustomClient,
+  message: Message,
+) {
+  try {
+    await handleMessageCreate(client, message);
+  } catch (error) {
+    console.error("[messageCreate]", error);
+    try {
+      await message.reply(
+        truncateMessage(formatErrorForUser(error)),
+      );
+    } catch (replyError) {
+      console.error("[messageCreate] failed to reply:", replyError);
+    }
+  }
+}
+
+async function handleMessageCreate(
   client: CustomClient,
   message: Message,
 ) {

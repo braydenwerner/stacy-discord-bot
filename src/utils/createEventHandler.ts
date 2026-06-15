@@ -16,8 +16,12 @@ export function createEventHandler(client: Client) {
       ?.split(".")[0] as string;
 
     client.on(eventName, async (arg: any) => {
-      const eventFunction = (await import(file)).default;
-      await eventFunction(client, arg);
+      try {
+        const eventFunction = (await import(file)).default;
+        await eventFunction(client, arg);
+      } catch (error) {
+        console.error(`[event:${eventName}]`, error);
+      }
     });
   }
 }

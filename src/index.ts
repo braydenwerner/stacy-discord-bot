@@ -4,6 +4,7 @@ import { closeDatabase, initDatabase } from "@/db/database";
 import { createCommandHandler } from "@/utils/createCommandHandler";
 import { createEventHandler } from "@/utils/createEventHandler";
 import { registerMusicPlayerListeners } from "@/utils/music/registerMusicPlayerListeners";
+import { registerRuntimeErrorHandlers } from "@/utils/registerRuntimeErrorHandlers";
 import { startTokenReporter } from "@/utils/tokenTracker";
 import { DefaultExtractors } from "@discord-player/extractor";
 import { Player } from "discord-player";
@@ -26,6 +27,12 @@ const client = new Client({
 client.commands = new Collection();
 
 const player = new Player(client);
+
+registerRuntimeErrorHandlers();
+
+client.on("error", (error) => {
+  console.error("[discord] client error:", error);
+});
 
 function shutdown(): void {
   closeDatabase();

@@ -1,4 +1,5 @@
 import type { PlaylistTrack } from "@/db/playlists";
+import { formatErrorForUser } from "@/utils/formatError";
 import { truncateMessage } from "@/utils/truncateMessage";
 import { QueryType, useMainPlayer } from "discord-player";
 import {
@@ -55,43 +56,49 @@ export async function playTrack(
     return false;
   }
 
-  const player = useMainPlayer();
-  const searchResult = await player.search(url || query, {
-    searchEngine: url ? QueryType.AUTO : QueryType.YOUTUBE_SEARCH,
-    fallbackSearchEngine: QueryType.YOUTUBE_SEARCH,
-    requestedBy: ctx.user,
-  });
+  try {
+    const player = useMainPlayer();
+    const searchResult = await player.search(url || query, {
+      searchEngine: url ? QueryType.AUTO : QueryType.YOUTUBE_SEARCH,
+      fallbackSearchEngine: QueryType.YOUTUBE_SEARCH,
+      requestedBy: ctx.user,
+    });
 
-  if (!searchResult?.tracks?.length) {
-    await ctx.reply("Couldn't find that song.");
-    return false;
-  }
+    if (!searchResult?.tracks?.length) {
+      await ctx.reply("Couldn't find that song.");
+      return false;
+    }
 
-  tagTracksWithRequest(searchResult.tracks, ctx);
-  const existingQueue = player.nodes.get(voiceChannel.guild.id);
-  if (existingQueue) {
-    syncQueueRequestMetadata(existingQueue, ctx);
-  }
+    tagTracksWithRequest(searchResult.tracks, ctx);
+    const existingQueue = player.nodes.get(voiceChannel.guild.id);
+    if (existingQueue) {
+      syncQueueRequestMetadata(existingQueue, ctx);
+    }
 
-  const { track, queue } = await player.play(voiceChannel, searchResult, {
-    nodeOptions: {
-      metadata: {
-        channel: ctx.channel,
-        member: ctx.member,
-        requestMessage: ctx.requestMessage,
+    const { track, queue } = await player.play(voiceChannel, searchResult, {
+      nodeOptions: {
+        metadata: {
+          channel: ctx.channel,
+          member: ctx.member,
+          requestMessage: ctx.requestMessage,
+        },
       },
-    },
-  });
+    });
 
-  if (!track) {
-    await ctx.reply("Failed to play song.");
+    if (!track) {
+      await ctx.reply("Failed to play song.");
+      return false;
+    }
+
+    syncQueueRequestMetadata(queue, ctx);
+    tagTracksWithRequest(searchResult.tracks, ctx);
+
+    return true;
+  } catch (error) {
+    console.error("[music] playTrack failed:", error);
+    await ctx.reply(formatErrorForUser(error));
     return false;
   }
-
-  syncQueueRequestMetadata(queue, ctx);
-  tagTracksWithRequest(searchResult.tracks, ctx);
-
-  return true;
 }
 
 export function playContextFromMessage(message: Message): PlayContext {

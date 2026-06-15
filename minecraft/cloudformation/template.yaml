@@ -84,7 +84,7 @@ Parameters:
   MonthlyBudgetUsd:
     Type: Number
     Default: 1000
-    Description: Annual cost budget cap (USD) for Stacy /aws usage tracking.
+    Description: Annual cost budget cap (USD) for /cost — create via minecraft/create-budget.sh, not this stack.
 
 Conditions:
   HasSshAccess: !Not [!Equals [!Ref SshCidrBlocks, ""]]
@@ -206,8 +206,6 @@ Resources:
           Ebs:
             VolumeType: gp3
             VolumeSize: !Ref RootVolumeSizeGb
-            Iops: !Ref EbsIops
-            Throughput: !Ref EbsThroughputMbps
             Encrypted: true
       MetadataOptions:
         HttpEndpoint: enabled
@@ -342,23 +340,6 @@ Resources:
         RoleArn: !GetAtt SchedulerRole.Arn
         Input: !Sub |
           {"InstanceIds": ["${McInstance}"]}
-
-  CreditsBudget:
-    Type: AWS::Budgets::Budget
-    Properties:
-      Budget:
-        BudgetName: !Sub "${ProjectName}-credits"
-        BudgetLimit:
-          Amount: !Ref MonthlyBudgetUsd
-          Unit: USD
-        BudgetType: COST
-        TimeUnit: ANNUALLY
-        CostTypes:
-          IncludeCredit: true
-          IncludeRefund: true
-          IncludeTax: true
-          IncludeSubscription: true
-          UseBlended: false
 
 Outputs:
   InstanceId:

@@ -98,6 +98,12 @@ const MIGRATIONS: string[] = [
     CREATE INDEX IF NOT EXISTS idx_playlist_tracks_playlist_id
       ON playlist_tracks (playlist_id);
   `,
+  `
+    CREATE TABLE IF NOT EXISTS minecraft_watch_state (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+  `,
 ];
 
 export function runMigrations(db: DatabaseSync): void {

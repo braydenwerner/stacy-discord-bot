@@ -44,6 +44,20 @@ pnpm run start
 | `GITHUB_TOKEN` | no | Used by the PR queue worker |
 | `YOUTUBE_COOKIE` | no | Improves YouTube playback on the Pi |
 | `DEBUG_ENABLED` | no | Extra logging |
+| `AWS_REGION` | no* | AWS region for Minecraft EC2 |
+| `AWS_ACCESS_KEY_ID` | no* | IAM user key for `/minecraft` (from CloudFormation output) |
+| `AWS_SECRET_ACCESS_KEY` | no* | IAM secret for Minecraft EC2 control |
+| `MINECRAFT_INSTANCE_ID` | no* | EC2 instance ID to start/stop |
+| `MINECRAFT_SERVER_HOST` | no | Player connect hostname (e.g. `mc.motelrate.com`; defaults to instance public IP) |
+| `MINECRAFT_PORT` | no | Minecraft port (default `25565`) |
+| `MINECRAFT_NOTIFY_CHANNEL_ID` | no | Channel for backup + lifecycle notifications (default: `1511949691858718771`) |
+| `MINECRAFT_BACKUP_BUCKET` | no* | S3 backup bucket for the backup watcher and `/minecraft backups` |
+| `MINECRAFT_SSH_KEY_PATH` | no | Fallback path to EC2 SSH private key for logs/health when SSM is unavailable |
+
+\*Required together for `/minecraft` and `manageMinecraft`. Set `MINECRAFT_BACKUP_BUCKET` (CloudFormation `BackupBucket` output) for S3 backup notifications. Stacy posts to `MINECRAFT_NOTIFY_CHANNEL_ID` (default `1511949691858718771`) when:
+
+- EC2 starts/stops (including **idle shutdown** after no players)
+- **Periodic** and idle-shutdown **S3 world backups** complete (polled every 2 minutes)
 
 ## Talking to Stacy
 
@@ -199,6 +213,12 @@ Registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and invoked fro
 |------|------------|--------------|
 | `openPullRequest` | `task` | Enqueue a Cursor agent job to implement a change and open a PR (needs `CURSOR_API_KEY`) |
 
+#### Minecraft — start/status: anyone; stop: **Equality** role
+
+| Tool | Parameters | What it does |
+|------|------------|--------------|
+| `manageMinecraft` | `action`: `start` \| `stop` \| `status` \| `health` \| `logs` \| `backups` \| `metrics`; optional `logLines` | EC2 control and observability (CPU, IOPS, logs, S3 backups) |
+
 #### Web — anyone
 
 | Tool | Parameters | What it does |
@@ -225,6 +245,7 @@ Deploy with `pnpm run deployCommands`.
 | `/people` | Equality | List contacts (embed) |
 | `/contact` | Equality | `add`, `remove`, `update` |
 | `/group` | Equality | `create`, `add-member`, `remove-member`, `delete`, `list`, `ping` |
+| `/minecraft` | start/status/health/logs/backups/metrics: everyone; stop: Equality | EC2 control + observability (port health, logs, S3 backups, CloudWatch metrics) |
 | `/tone` | Bot owner | `nice-add`, `nice-remove`, `snarky-add` (alias for remove), `list` |
 
 **Directory admin** (contacts, groups, `/people`): **Equality** role, Discord **Administrator** or **Manage Server** permission, or bot owner (`STACY_OWNER_ID`).
@@ -266,13 +287,15 @@ Migrations run automatically on startup (`src/db/migrations.ts`). Playlist migra
 ```
 src/
   index.ts              # Client, player, DB init
-  commands/             # Slash commands (/playlist, /group, …)
+  commands/             # Slash commands (/playlist, /group, /minecraft, …)
   events/               # messageCreate agent loop, interactions
   tools/                # LangChain DynamicStructuredTool definitions
   db/                   # SQLite access + migrations
   utils/
     music/              # playTrack, context panel, player listeners
+    minecraft/          # EC2 start/stop client for Minecraft server
     directoryEmbeds.ts  # Embeds for contacts, groups, playlists, nice list
+minecraft/              # AWS stack + EC2 server scripts
 ```
 
 ## Development on PiQueen

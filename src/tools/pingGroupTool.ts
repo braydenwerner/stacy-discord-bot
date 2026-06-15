@@ -10,10 +10,15 @@ export const pingGroupTool = new DynamicStructuredTool({
     "Ping (mention) everyone in a user group and send them a message. " +
     "ONLY for Equality role, server admins, or bot owner. Use when they ask to send or ping a group " +
     '(e.g. "send hey guys! to cs2", "ping the baldurs gate group"). ' +
-    "Groups are stored in the database and managed with manageUserGroup / listUserGroups.",
+    "Groups are stored in the database and managed with manageUserGroup / listUserGroups. " +
+    "If no message is specified, just ping the group with an empty message.",
   schema: z.object({
     group: z.string().describe("The group name."),
-    text: z.string().describe("The message to send to the group."),
+    text: z
+      .string()
+      .optional()
+      .default("")
+      .describe("The message to send to the group. Defaults to empty."),
   }),
   func: async ({ group, text }, _runManager, config) => {
     const message = getToolMessage(config);

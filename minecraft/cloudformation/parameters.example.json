@@ -1,0 +1,94 @@
+[
+  {
+    "ParameterKey": "ProjectName",
+    "ParameterValue": "stacy-mc"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "c6i.2xlarge"
+  },
+  {
+    "ParameterKey": "RootVolumeSizeGb",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "EbsIops",
+    "ParameterValue": "5000"
+  },
+  {
+    "ParameterKey": "EbsThroughputMbps",
+    "ParameterValue": "250"
+  },
+  {
+    "ParameterKey": "McPort",
+    "ParameterValue": "25565"
+  },
+  {
+    "ParameterKey": "AllowedCidrBlocks",
+    "ParameterValue": "0.0.0.0/0"
+  },
+  {
+    "ParameterKey": "SshCidrBlocks",
+    "ParameterValue": "YOUR.PUBLIC.IP/32"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "stacy-mc"
+  },
+  {
+    "ParameterKey": "AllocateEip",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "VpcId",
+    "ParameterValue": "REPLACE_ME"
+  },
+  {
+    "ParameterKey": "SubnetId",
+    "ParameterValue": "REPLACE_ME"
+  },
+  {
+    "ParameterKey": "CreateBotIamUser",
+    "ParameterValue": "true"
+  },
+  {
+    "ParameterKey": "EnableScheduledStart",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "ScheduledStartCron",
+    "ParameterValue": "cron(0 18 * * ? *)"
+  },
+  {
+    "ParameterKey": "ScheduledStartTimezone",
+    "ParameterValue": "UTC"
+  },
+  {
+    "ParameterKey": "BackupKeepCount",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "McVersion",
+    "ParameterValue": "26.1.2"
+  },
+  {
+    "ParameterKey": "JvmMaxMemory",
+    "ParameterValue": "6G"
+  },
+  {
+    "ParameterKey": "IdleShutdownMinutes",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "BackupIntervalHours",
+    "ParameterValue": "6"
+  },
+  {
+    "ParameterKey": "AwsRegion",
+    "ParameterValue": "us-east-1"
+  },
+  {
+    "ParameterKey": "ConnectHost",
+    "ParameterValue": "mc.example.com"
+  }
+]

@@ -1,0 +1,362 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: On-demand EC2 compute with S3 data retention and optional scheduled start.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: stacy-mc
+    Description: Prefix for resource names and tags.
+
+  InstanceType:
+    Type: String
+    Default: c6i.xlarge
+    Description: EC2 instance type.
+
+  RootVolumeSizeGb:
+    Type: Number
+    Default: 30
+    Description: Root gp3 volume size in GB.
+
+  EbsIops:
+    Type: Number
+    Default: 5000
+    Description: Provisioned gp3 IOPS for the root volume.
+
+  EbsThroughputMbps:
+    Type: Number
+    Default: 250
+    Description: Provisioned gp3 throughput (MiB/s) for the root volume.
+
+  McPort:
+    Type: Number
+    Default: 25565
+    Description: Primary TCP service port.
+
+  AllowedCidrBlocks:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: CIDR block allowed on the service port.
+
+  SshCidrBlocks:
+    Type: String
+    Default: ""
+    Description: CIDR for SSH (port 22). Leave empty to disable SSH ingress.
+
+  KeyName:
+    Type: String
+    Default: ""
+    Description: Optional EC2 key pair for SSH.
+
+  AllocateEip:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+    Description: Attach an Elastic IP for a stable connect address.
+
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: Subnet for the instance (use a default-VPC public subnet).
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC for the security group (must match SubnetId).
+
+  CreateBotIamUser:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+    Description: Create IAM user + access key for the Stacy Discord bot.
+
+  EnableScheduledStart:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "false"
+    Description: EventBridge Scheduler cron to start the instance.
+
+  ScheduledStartCron:
+    Type: String
+    Default: cron(0 18 * * ? *)
+
+  ScheduledStartTimezone:
+    Type: String
+    Default: UTC
+
+Conditions:
+  HasSshAccess: !Not [!Equals [!Ref SshCidrBlocks, ""]]
+  HasKeyName: !Not [!Equals [!Ref KeyName, ""]]
+  DoAllocateEip: !Equals [!Ref AllocateEip, "true"]
+  DoCreateBotUser: !Equals [!Ref CreateBotIamUser, "true"]
+  DoScheduledStart: !Equals [!Ref EnableScheduledStart, "true"]
+
+Resources:
+  McBackupsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-data-backups-${AWS::Region}-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Application
+          Value: mc
+
+  McSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: MC workload ingress
+      GroupName: !Sub "${ProjectName}-sg"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref McPort
+          ToPort: !Ref McPort
+          CidrIp: !Ref AllowedCidrBlocks
+          Description: Service
+      SecurityGroupEgress:
+        - IpProtocol: "-1"
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-sg"
+
+  McSecurityGroupSshIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: HasSshAccess
+    Properties:
+      GroupId: !Ref McSecurityGroup
+      IpProtocol: tcp
+      FromPort: 22
+      ToPort: 22
+      CidrIp: !Ref SshCidrBlocks
+      Description: SSH
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-ec2-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: s3-backup
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !GetAtt McBackupsBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix:
+                      - archives/*
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:AbortMultipartUpload
+                Resource: !Sub "${McBackupsBucket.Arn}/*"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub "${ProjectName}-ec2-profile"
+      Roles:
+        - !Ref Ec2Role
+
+  McInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Sub "{{resolve:ssm:/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64}}"
+      InstanceType: !Ref InstanceType
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds:
+        - !Ref McSecurityGroup
+      IamInstanceProfile: !Ref Ec2InstanceProfile
+      KeyName: !If [HasKeyName, !Ref KeyName, !Ref AWS::NoValue]
+      UserData: __USERDATA_BASE64__
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeType: gp3
+            VolumeSize: !Ref RootVolumeSizeGb
+            Iops: !Ref EbsIops
+            Throughput: !Ref EbsThroughputMbps
+            Encrypted: true
+      MetadataOptions:
+        HttpEndpoint: enabled
+        HttpTokens: required
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-host"
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: ManagedBy
+          Value: cloudformation
+        - Key: Application
+          Value: mc
+
+  McEip:
+    Type: AWS::EC2::EIP
+    Condition: DoAllocateEip
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref McInstance
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectName}-eip"
+
+  StacyBotUser:
+    Type: AWS::IAM::User
+    Condition: DoCreateBotUser
+    Properties:
+      UserName: !Sub "${ProjectName}-bot"
+      Policies:
+        - PolicyName: ec2-and-s3-read
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ec2:StartInstances
+                  - ec2:StopInstances
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${McInstance}"
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                  - ec2:DescribeInstanceStatus
+                  - ec2:DescribeVolumes
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - cloudwatch:GetMetricData
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                Resource:
+                  - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${McInstance}"
+                  - !Sub "arn:aws:ssm:${AWS::Region}::document/AWS-RunShellScript"
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource: !GetAtt McBackupsBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix:
+                      - archives/*
+                      - events/*
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                Resource: !Sub "${McBackupsBucket.Arn}/*"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  StacyBotAccessKey:
+    Type: AWS::IAM::AccessKey
+    Condition: DoCreateBotUser
+    Properties:
+      UserName: !Ref StacyBotUser
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Condition: DoScheduledStart
+    Properties:
+      RoleName: !Sub "${ProjectName}-scheduler-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: scheduler.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: start-ec2
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ec2:StartInstances
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${McInstance}"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+
+  ScheduledStart:
+    Type: AWS::Scheduler::Schedule
+    Condition: DoScheduledStart
+    Properties:
+      Name: !Sub "${ProjectName}-daily-start"
+      ScheduleExpression: !Ref ScheduledStartCron
+      ScheduleExpressionTimezone: !Ref ScheduledStartTimezone
+      FlexibleTimeWindow:
+        Mode: "OFF"
+      Target:
+        Arn: arn:aws:scheduler:::aws-sdk:ec2:startInstances
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: !Sub |
+          {"InstanceIds": ["${McInstance}"]}
+
+Outputs:
+  InstanceId:
+    Description: EC2 instance ID for the bot (MINECRAFT_INSTANCE_ID).
+    Value: !Ref McInstance
+
+  McHost:
+    Description: Elastic IP (DNS A record target). Player hostname is ConnectHost in parameters.json.
+    Value: !If
+      - DoAllocateEip
+      - !Ref McEip
+      - !GetAtt McInstance.PublicIp
+
+  McPort:
+    Value: !Ref McPort
+
+  BackupBucket:
+    Description: S3 backup bucket for the bot (MINECRAFT_BACKUP_BUCKET).
+    Value: !Ref McBackupsBucket
+
+  BotIamUser:
+    Condition: DoCreateBotUser
+    Value: !Ref StacyBotUser
+
+  BotAccessKeyId:
+    Condition: DoCreateBotUser
+    Description: Set as AWS_ACCESS_KEY_ID on the Pi.
+    Value: !Ref StacyBotAccessKey
+
+  BotSecretAccessKey:
+    Condition: DoCreateBotUser
+    Description: Set as AWS_SECRET_ACCESS_KEY on the Pi.
+    Value: !GetAtt StacyBotAccessKey.SecretAccessKey
+
+  AwsRegion:
+    Value: !Ref AWS::Region

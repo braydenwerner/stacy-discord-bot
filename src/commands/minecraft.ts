@@ -9,6 +9,9 @@ import {
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
+import { buildMinecraftBackupsEmbed } from "@/utils/minecraft/minecraftEmbeds";
+import { isMinecraftBackupConfigured } from "@/utils/minecraft/minecraftBackups";
+import { getMinecraftBackupReport } from "@/utils/minecraft/minecraftObservability";
 import { runMinecraftObserve } from "@/utils/minecraft/runMinecraftObserve";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
 import { replyDenied, replyError } from "@/utils/slashReply";
@@ -82,12 +85,25 @@ export default {
 
       if (OBSERVE_SUBCOMMANDS.has(sub)) {
         await interaction.deferReply({ ephemeral: true });
+        if (sub === "backups") {
+          if (!isMinecraftBackupConfigured()) {
+            await interaction.editReply(
+              "MINECRAFT_BACKUP_BUCKET is not set.",
+            );
+            return;
+          }
+          const { bucket, backups } = await getMinecraftBackupReport(8);
+          await interaction.editReply({
+            embeds: [buildMinecraftBackupsEmbed(bucket, backups)],
+          });
+          return;
+        }
         const logLines =
           sub === "logs"
             ? (interaction.options.getInteger("lines") ?? 25)
             : undefined;
         const text = await runMinecraftObserve(
-          sub as "health" | "logs" | "backups" | "metrics",
+          sub as "health" | "logs" | "metrics",
           { logLines },
         );
         await interaction.editReply(text);

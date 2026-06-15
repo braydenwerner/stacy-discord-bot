@@ -1,5 +1,5 @@
 import { MINECRAFT_NOTIFY_CHANNEL_ID } from "@/constants/constants";
-import type { Client, SendableChannels } from "discord.js";
+import type { Client, EmbedBuilder, SendableChannels } from "discord.js";
 
 export function getMinecraftNotifyChannelId(): string {
   return MINECRAFT_NOTIFY_CHANNEL_ID;
@@ -25,5 +25,15 @@ export async function notifyMinecraftChannel(
   const channel = await resolveMinecraftNotifyChannel(client);
   if (!channel) return false;
   await channel.send(content);
+  return true;
+}
+
+export async function notifyMinecraftEmbed(
+  client: Client,
+  embed: EmbedBuilder,
+): Promise<boolean> {
+  const channel = await resolveMinecraftNotifyChannel(client);
+  if (!channel) return false;
+  await channel.send({ embeds: [embed] });
   return true;
 }

@@ -86,29 +86,3 @@ export async function getBackupSource(key: string): Promise<BackupSource> {
   return "manual";
 }
 
-export function formatBackupNotifyMessage(
-  bucket: string,
-  key: string,
-  source: BackupSource,
-  stamp: string,
-  sizeBytes: number | null,
-): string {
-  const labels: Record<BackupSource, string> = {
-    periodic: "**Periodic world backup saved**",
-    idle: "**Idle-shutdown world backup saved**",
-    stop: "**Pre-stop world backup saved**",
-    manual: "**S3 world backup saved**",
-  };
-
-  const size =
-    sizeBytes == null
-      ? ""
-      : sizeBytes < 1024 ** 2
-        ? ` (${(sizeBytes / 1024).toFixed(0)} KB)`
-        : sizeBytes < 1024 ** 3
-          ? ` (${(sizeBytes / 1024 ** 2).toFixed(1)} MB)`
-          : ` (${(sizeBytes / 1024 ** 3).toFixed(2)} GB)`;
-
-  const time = stamp ? ` (${stamp} UTC)` : "";
-  return `${labels[source]}${size} → \`s3://${bucket}/${key}\`${time}`;
-}

@@ -4,7 +4,8 @@ import {
 } from "@/db/minecraftWatchState";
 import { MS_IN_ONE_MINUTE } from "@/constants/constants";
 import { isMinecraftBackupConfigured } from "@/utils/minecraft/minecraftBackups";
-import { notifyMinecraftChannel } from "@/utils/minecraft/minecraftNotify";
+import { buildIdleShutdownEmbed } from "@/utils/minecraft/minecraftEmbeds";
+import { notifyMinecraftEmbed } from "@/utils/minecraft/minecraftNotify";
 import { GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 import type { Client } from "discord.js";
 
@@ -83,13 +84,15 @@ async function pollIdleShutdownEvents(client: Client): Promise<void> {
     const idleMinutes = event?.idleMinutes ?? "?";
     const elapsedMinutes = event?.elapsedMinutes ?? "?";
 
-    setMinecraftWatchValue(IDLE_SHUTDOWN_AT_KEY, new Date().toISOString());
+    const at = new Date();
+    setMinecraftWatchValue(IDLE_SHUTDOWN_AT_KEY, at.toISOString());
 
-    await notifyMinecraftChannel(
-      client,
-      `**Minecraft idle shutdown** — no players for **${elapsedMinutes}** minutes ` +
-        `(threshold ${idleMinutes} min). Saving a world backup and halting EC2.`,
-    );
+    const embed = buildIdleShutdownEmbed({
+      idleMinutes,
+      elapsedMinutes,
+      at,
+    });
+    await notifyMinecraftEmbed(client, embed);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.warn(`[minecraft] idle-shutdown watch failed: ${reason}`);

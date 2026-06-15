@@ -4,6 +4,11 @@ import type {
   MinecraftMetrics,
 } from "@/utils/minecraft/minecraftObservability";
 import {
+  formatBackupStampPacific,
+  formatPacificDateTime,
+} from "@/utils/formatPacificTime";
+import { s3ObjectConsoleUrl } from "@/utils/aws/awsConsoleUrls";
+import {
   formatBackupAge,
   formatBackupStamp,
   formatBytes,
@@ -77,9 +82,15 @@ export function formatMinecraftBackups(
   lines.push(`Showing **${backups.length}** most recent:`);
   for (const backup of backups) {
     const stamp = formatBackupStamp(backup.key);
+    const when = backup.lastModified
+      ? formatPacificDateTime(backup.lastModified)
+      : formatBackupStampPacific(stamp);
     const age = formatBackupAge(backup.lastModified);
     const size = formatBytes(backup.sizeBytes);
-    lines.push(`• \`${stamp}\` — ${size}, ${age}`);
+    const awsUrl = s3ObjectConsoleUrl(bucket, backup.key);
+    lines.push(
+      `• \`${stamp}\` — ${size}, ${when} (${age}) — [AWS](${awsUrl})`,
+    );
   }
 
   return lines.join("\n");

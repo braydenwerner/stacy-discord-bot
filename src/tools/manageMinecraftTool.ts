@@ -9,6 +9,9 @@ import {
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
+import { buildMinecraftBackupsEmbed } from "@/utils/minecraft/minecraftEmbeds";
+import { isMinecraftBackupConfigured } from "@/utils/minecraft/minecraftBackups";
+import { getMinecraftBackupReport } from "@/utils/minecraft/minecraftObservability";
 import { runMinecraftObserve } from "@/utils/minecraft/runMinecraftObserve";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
@@ -73,12 +76,24 @@ export const manageMinecraftTool = new DynamicStructuredTool({
       if (
         action === "health" ||
         action === "logs" ||
-        action === "backups" ||
         action === "metrics"
       ) {
         const text = await runMinecraftObserve(action, { logLines });
         await message.reply(text);
         return toolOk(text);
+      }
+
+      if (action === "backups") {
+        if (!isMinecraftBackupConfigured()) {
+          const text = "MINECRAFT_BACKUP_BUCKET is not set.";
+          await message.reply(text);
+          return toolError(text);
+        }
+        const { bucket, backups } = await getMinecraftBackupReport(8);
+        const embed = buildMinecraftBackupsEmbed(bucket, backups);
+        await message.reply({ embeds: [embed] });
+        const summary = `Listed ${backups.length} backup${backups.length === 1 ? "" : "s"} from ${bucket}.`;
+        return toolOk(summary);
       }
 
       const denied = await requireEquality(message);

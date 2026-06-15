@@ -4,14 +4,14 @@ import {
 } from "@/db/minecraftWatchState";
 import { MS_IN_ONE_MINUTE } from "@/constants/constants";
 import {
-  formatBackupNotifyMessage,
   formatBackupStamp,
   getBackupSource,
   isMinecraftBackupConfigured,
   MINECRAFT_ARCHIVES_PREFIX,
   minecraftBackupBucket,
 } from "@/utils/minecraft/minecraftBackups";
-import { notifyMinecraftChannel } from "@/utils/minecraft/minecraftNotify";
+import { buildBackupSavedEmbed } from "@/utils/minecraft/minecraftEmbeds";
+import { notifyMinecraftEmbed } from "@/utils/minecraft/minecraftNotify";
 import { ListObjectsV2Command, S3Client, type _Object } from "@aws-sdk/client-s3";
 import type { Client } from "discord.js";
 
@@ -65,14 +65,15 @@ async function pollBackups(client: Client): Promise<void> {
     setMinecraftWatchValue(WATCH_KEY, newest.Key);
     const source = await getBackupSource(newest.Key);
     const stamp = formatBackupStamp(newest.Key);
-    const message = formatBackupNotifyMessage(
+    const embed = buildBackupSavedEmbed({
       bucket,
-      newest.Key,
+      key: newest.Key,
       source,
       stamp,
-      newest.Size ?? null,
-    );
-    await notifyMinecraftChannel(client, message);
+      sizeBytes: newest.Size ?? null,
+      lastModified: newest.LastModified ?? null,
+    });
+    await notifyMinecraftEmbed(client, embed);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.warn(`[minecraft] backup watch failed: ${reason}`);

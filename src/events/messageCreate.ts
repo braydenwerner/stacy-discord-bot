@@ -14,7 +14,7 @@ import { fetchPageTool } from "@/tools/fetchPageTool";
 import { managePlaylistsTool } from "@/tools/managePlaylistsTool";
 import { manageToneListTool } from "@/tools/manageToneListTool";
 import { manageMinecraftTool } from "@/tools/manageMinecraftTool";
-import { awsUsageTool } from "@/tools/awsUsageTool";
+import { totalCostTool } from "@/tools/totalCostTool";
 import { openPullRequestTool } from "@/tools/openPullRequestTool";
 import { listContactsTool } from "@/tools/listContactsTool";
 import { listUserGroupsTool } from "@/tools/listUserGroupsTool";
@@ -69,7 +69,7 @@ const tools: Record<string, DynamicStructuredTool> = {
   [managePlaylistsTool.name]: managePlaylistsTool,
   [openPullRequestTool.name]: openPullRequestTool,
   [manageMinecraftTool.name]: manageMinecraftTool,
-  [awsUsageTool.name]: awsUsageTool,
+  [totalCostTool.name]: totalCostTool,
 };
 
 // Read tools return text that gets fed back to the model for a persona-voiced answer.

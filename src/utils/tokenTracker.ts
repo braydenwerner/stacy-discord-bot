@@ -9,6 +9,7 @@ type UsageMetadata = {
 };
 
 // gpt-4.1 pricing (USD per 1M tokens). Estimates - prices change, so update here.
+export const OPENAI_MODEL = "gpt-4.1";
 const INPUT_PER_1M = 2.0;
 const OUTPUT_PER_1M = 8.0;
 

@@ -53,7 +53,7 @@ pnpm run start
 | `MINECRAFT_NOTIFY_CHANNEL_ID` | no | Channel for backup + lifecycle notifications (default: `1511949691858718771`) |
 | `MINECRAFT_BACKUP_BUCKET` | no* | S3 backup bucket for the backup watcher and `/minecraft backups` |
 | `MINECRAFT_SSH_KEY_PATH` | no | Fallback path to EC2 SSH private key for logs/health when SSM is unavailable |
-| `AWS_BUDGET_NAME` | no | AWS Budget name for `/aws usage` remaining-budget display |
+| `AWS_BUDGET_NAME` | no | AWS Budget name for `/cost` remaining-budget display |
 | `AWS_MONTHLY_BUDGET_USD` | no | Manual monthly cap (USD) when no AWS Budget exists |
 | `AWS_PROMO_CREDIT_USD` | no | Promo credit pool (USD) for estimated remaining credits |
 | `AWS_ACCOUNT_ID` | no | AWS account ID (auto-detected via STS if omitted) |
@@ -249,7 +249,7 @@ Deploy with `pnpm run deployCommands`.
 | `/people` | Equality | List contacts (embed) |
 | `/contact` | Equality | `add`, `remove`, `update` |
 | `/group` | Equality | `create`, `add-member`, `remove-member`, `delete`, `list`, `ping` |
-| `/aws usage` | Equality | Month-to-date spend, 12-month total, forecast, credits, budget remaining |
+| `/cost` | Equality | Total AWS + OpenAI spend breakdown, credits, budget remaining |
 | `/minecraft` | start/status/health/logs/backups/metrics: everyone; stop: Equality | EC2 control + observability (port health, logs, S3 backups, CloudWatch metrics) |
 | `/tone` | Bot owner | `nice-add`, `nice-remove`, `snarky-add` (alias for remove), `list` |
 

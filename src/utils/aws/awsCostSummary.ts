@@ -1,7 +1,6 @@
 import {
   CostExplorerClient,
   GetCostAndUsageCommand,
-  GetCostForecastCommand,
   type GetCostAndUsageCommandOutput,
   type Group,
 } from "@aws-sdk/client-cost-explorer";
@@ -13,7 +12,6 @@ import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
 import {
   AWS_BILLING_REGION,
   awsBudgetName,
-  monthlyBudgetUsd,
   promoCreditPoolUsd,
 } from "@/utils/aws/awsConfig";
 
@@ -30,18 +28,14 @@ export type AwsBudgetSnapshot = {
   period: string;
 };
 
-export type AwsUsageReport = {
-  monthToDateUsd: number;
-  lastMonthUsd: number;
-  trailingTwelveMonthsUsd: number;
-  creditsMonthToDateUsd: number;
-  forecastRestOfMonthUsd: number | null;
-  projectedMonthTotalUsd: number | null;
+export type AwsCostSummary = {
+  totalUsd: number;
+  creditsUsd: number;
+  services: AwsServiceSpend[];
   budget: AwsBudgetSnapshot | null;
-  manualBudgetRemainingUsd: number | null;
   promoCreditRemainingUsd: number | null;
-  topServices: AwsServiceSpend[];
-  periodLabel: string;
+  periodStart: string;
+  periodEnd: string;
 };
 
 function isoDate(d: Date): string {
@@ -54,12 +48,12 @@ function addUtcDays(d: Date, days: number): Date {
   return copy;
 }
 
-function monthStartUtc(d: Date): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
-}
-
-function previousMonthStartUtc(d: Date): Date {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1));
+function billingPeriodStart(now: Date): string {
+  const fromEnv = process.env.AWS_BILLING_SINCE?.trim();
+  if (fromEnv && /^\d{4}-\d{2}-\d{2}$/.test(fromEnv)) return fromEnv;
+  return isoDate(
+    new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), 1)),
+  );
 }
 
 function sumUnblendedCost(output: GetCostAndUsageCommandOutput): number {
@@ -152,28 +146,6 @@ async function fetchCost(
   return { total: sumUnblendedCost(output), services: [] };
 }
 
-async function fetchForecast(
-  start: string,
-  end: string,
-): Promise<number | null> {
-  try {
-    const output = await costExplorer().send(
-      new GetCostForecastCommand({
-        TimePeriod: { Start: start, End: end },
-        Metric: "UNBLENDED_COST",
-        Granularity: "MONTHLY",
-      }),
-    );
-    let total = 0;
-    for (const point of output.ForecastResultsByTime ?? []) {
-      total += Number.parseFloat(point.MeanValue ?? "0");
-    }
-    return total;
-  } catch {
-    return null;
-  }
-}
-
 async function fetchAwsBudget(): Promise<AwsBudgetSnapshot | null> {
   const name = awsBudgetName();
   if (!name) return null;
@@ -206,58 +178,30 @@ async function fetchAwsBudget(): Promise<AwsBudgetSnapshot | null> {
   };
 }
 
-export async function getAwsUsageReport(): Promise<AwsUsageReport> {
+/** AWS spend for the configured billing window (default trailing 12 months). */
+export async function getAwsCostSummary(): Promise<AwsCostSummary> {
   const now = new Date();
-  const monthStart = isoDate(monthStartUtc(now));
+  const periodStart = billingPeriodStart(now);
+  const periodEnd = isoDate(now);
   const nextDay = isoDate(addUtcDays(now, 1));
-  const lastMonthStart = isoDate(previousMonthStartUtc(now));
-  const trailingStart = isoDate(
-    new Date(Date.UTC(now.getUTCFullYear() - 1, now.getUTCMonth(), 1)),
-  );
-  const monthEnd = isoDate(
-    new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1)),
-  );
 
-  const [
-    mtd,
-    lastMonth,
-    trailing,
-    credits,
-    mtdByService,
-    forecastRest,
-    budget,
-  ] = await Promise.all([
-    fetchCost(monthStart, nextDay),
-    fetchCost(lastMonthStart, monthStart),
-    fetchCost(trailingStart, nextDay),
-    fetchCost(monthStart, nextDay, { creditOnly: true }),
-    fetchCost(monthStart, nextDay, { groupByService: true }),
-    fetchForecast(isoDate(now), monthEnd),
+  const [total, credits, budget] = await Promise.all([
+    fetchCost(periodStart, nextDay, { groupByService: true }),
+    fetchCost(periodStart, nextDay, { creditOnly: true }),
     fetchAwsBudget(),
   ]);
 
-  const manualBudget = monthlyBudgetUsd();
-  const manualBudgetRemaining =
-    manualBudget != null ? manualBudget - mtd.total : null;
-
   const promoPool = promoCreditPoolUsd();
   const promoRemaining =
-    promoPool != null ? promoPool - trailing.total : null;
-
-  const projectedMonthTotal =
-    forecastRest != null ? mtd.total + forecastRest : null;
+    promoPool != null ? promoPool - total.total : null;
 
   return {
-    monthToDateUsd: mtd.total,
-    lastMonthUsd: lastMonth.total,
-    trailingTwelveMonthsUsd: trailing.total,
-    creditsMonthToDateUsd: credits.total,
-    forecastRestOfMonthUsd: forecastRest,
-    projectedMonthTotalUsd: projectedMonthTotal,
+    totalUsd: total.total,
+    creditsUsd: credits.total,
+    services: total.services,
     budget,
-    manualBudgetRemainingUsd: manualBudgetRemaining,
     promoCreditRemainingUsd: promoRemaining,
-    topServices: mtdByService.services.slice(0, 6),
-    periodLabel: monthStart.slice(0, 7),
+    periodStart,
+    periodEnd,
   };
 }

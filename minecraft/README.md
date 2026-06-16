@@ -46,9 +46,10 @@ If `/minecraft start` fails with an IAM access error, the bot user policy may st
 
 ```bash
 pnpm run minecraft:update-bot-iam
+pnpm run minecraft:verify-ssm
 ```
 
-That applies a tag-based policy (`Project=stacy-mc`) so start/stop works after instance replacement, and grants `s3:ListBucket` on the backup bucket (required for backup and idle-shutdown watchers).
+`minecraft:verify-ssm` (`minecraft/verify-bot-ssm.sh`) tests `ssm:SendCommand` using the bot keys in `bot.env`.
 
 Edit `server/` scripts, then re-run `./deploy.sh`.
 

@@ -78,7 +78,7 @@ POLICY_DOC="$(cat <<EOF
       "Resource": "arn:aws:ec2:${REGION}:${ACCOUNT_ID}:instance/*",
       "Condition": {
         "StringEquals": {
-          "ec2:ResourceTag/Project": "${PROJECT_NAME}"
+          "aws:ResourceTag/Project": "${PROJECT_NAME}"
         }
       }
     },

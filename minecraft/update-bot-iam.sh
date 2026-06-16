@@ -8,20 +8,41 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="${MINECRAFT_BOT_ENV:-$ROOT/minecraft/bot.env}"
 INSTANCE_ENV="${MINECRAFT_INSTANCE_ENV:-$ROOT/minecraft/instance.env}"
 
-if [[ -f "$ENV_FILE" ]]; then
-  # shellcheck disable=SC1090
-  set -a && source "$ENV_FILE" && set +a
+# bot.env holds the bot user's keys — never use them for iam:PutUserPolicy.
+load_env_file() {
+  local source="$1"
+  [[ -f "$source" ]] || return 0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "${line//[[:space:]]/}" || "$line" =~ ^# ]] && continue
+    local key="${line%%=*}"
+    case "$key" in
+      AWS_ACCESS_KEY_ID | AWS_SECRET_ACCESS_KEY | AWS_SESSION_TOKEN) continue ;;
+    esac
+    export "${key}=${line#*=}"
+  done < "$source"
+}
+
+if [[ -z "${AWS_PROFILE:-}" ]]; then
+  unset AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN
 fi
-if [[ -f "$INSTANCE_ENV" ]]; then
-  # shellcheck disable=SC1090
-  set -a && source "$INSTANCE_ENV" && set +a
-fi
+
+load_env_file "$ENV_FILE"
+load_env_file "$INSTANCE_ENV"
 
 PROJECT_NAME="${PROJECT_NAME:-stacy-mc}"
 BOT_USER="${BOT_IAM_USER:-${PROJECT_NAME}-bot}"
 REGION="${AWS_REGION:-us-west-1}"
 ACCOUNT_ID="${AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account --output text)}"
 BUCKET="${MINECRAFT_BACKUP_BUCKET:-${PROJECT_NAME}-data-backups-${REGION}-${ACCOUNT_ID}}"
+
+CALLER_ARN="$(aws sts get-caller-identity --query Arn --output text)"
+if [[ "$CALLER_ARN" == *":user/${BOT_USER}" ]]; then
+  echo "Error: current AWS credentials are for ${BOT_USER}, which cannot update its own IAM policy." >&2
+  echo "Run with admin credentials, e.g.:" >&2
+  echo "  AWS_PROFILE=your-admin-profile pnpm run minecraft:update-bot-iam" >&2
+  echo "Or unset AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY so the default admin profile is used." >&2
+  exit 1
+fi
 
 POLICY_DOC="$(cat <<EOF
 {

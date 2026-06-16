@@ -14,14 +14,14 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "@aws-sdk/client-budgets": "^3.1062.0",
-    "@aws-sdk/client-cloudformation": "^3.1062.0",
-    "@aws-sdk/client-cloudwatch": "^3.1062.0",
-    "@aws-sdk/client-cost-explorer": "^3.1062.0",
+    "@aws-sdk/client-budgets": "3.1068.0",
+    "@aws-sdk/client-cloudformation": "3.1068.0",
+    "@aws-sdk/client-cloudwatch": "3.1068.0",
+    "@aws-sdk/client-cost-explorer": "3.1068.0",
     "@aws-sdk/client-ec2": "^3.840.0",
     "@aws-sdk/client-s3": "^3.840.0",
-    "@aws-sdk/client-ssm": "^3.1062.0",
-    "@aws-sdk/client-sts": "^3.1062.0",
+    "@aws-sdk/client-ssm": "3.1068.0",
+    "@aws-sdk/client-sts": "3.1068.0",
     "@discord-player/extractor": "^7.2.0",
     "@discordjs/builders": "^1.14.1",
     "@discordjs/voice": "^0.19.2",
@@ -48,6 +48,7 @@
     "start": "node dist/index.js",
     "deployCommands": "tsx src/scripts/deployCommands.ts",
     "minecraft:fetch-env": "tsx src/scripts/fetchMinecraftStackEnv.ts",
+    "minecraft:sync-env": "bash minecraft/sync-bot-env.sh",
     "minecraft:create-budget": "bash minecraft/create-budget.sh",
     "minecraft:update-bot-iam": "bash minecraft/update-bot-iam.sh",
     "deploy": "pnpm run build && pm2 delete all || true && pm2 start dist/index.js --attach"

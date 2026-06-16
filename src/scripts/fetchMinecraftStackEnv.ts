@@ -14,7 +14,7 @@ import {
 } from "@aws-sdk/client-cloudformation";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const MC_ROOT = path.resolve(__dirname, "..");
+const MC_ROOT = path.resolve(__dirname, "../../minecraft");
 const BOT_ENV = path.join(MC_ROOT, "bot.env");
 const INSTANCE_ENV = path.join(MC_ROOT, "instance.env");
 

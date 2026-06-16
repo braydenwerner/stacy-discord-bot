@@ -51,7 +51,15 @@ pnpm run minecraft:verify-ssm
 
 `minecraft:verify-ssm` (`minecraft/verify-bot-ssm.sh`) tests `ssm:SendCommand` using the bot keys in `bot.env`.
 
-Edit `server/` scripts, then re-run `./deploy.sh`.
+After changing `server/scripts/idle-shutdown.sh`, push it to a **running** instance without a full stack redeploy:
+
+```bash
+pnpm run minecraft:sync-idle-script
+```
+
+User-data only runs on first boot — existing EC2 hosts keep old scripts until you sync or replace the instance.
+
+Edit `server/` scripts, then re-run `./deploy.sh` (new instances) or `minecraft:sync-idle-script` (live host).
 
 ## Destroy
 

@@ -51,6 +51,7 @@
     "minecraft:sync-env": "bash minecraft/sync-bot-env.sh",
     "minecraft:create-budget": "bash minecraft/create-budget.sh",
     "minecraft:update-bot-iam": "bash minecraft/update-bot-iam.sh",
+    "minecraft:sync-idle-script": "bash minecraft/sync-idle-script.sh",
     "minecraft:verify-ssm": "bash minecraft/verify-bot-ssm.sh",
     "minecraft:verify-bot-ssm": "bash minecraft/verify-bot-ssm.sh",
     "deploy": "pnpm run build && pm2 delete all || true && pm2 start dist/index.js --attach"

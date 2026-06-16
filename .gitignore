@@ -182,5 +182,6 @@ minecraft/cloudformation/packaged-template.yaml
 minecraft/cloudformation/parameters.json
 minecraft/instance.env
 minecraft/bot.env
+minecraft/.bot-iam-policy.generated.json
 minecraft/stacy-mc
 minecraft/*.pem

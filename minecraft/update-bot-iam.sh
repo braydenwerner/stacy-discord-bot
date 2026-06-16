@@ -129,4 +129,47 @@ aws iam put-user-policy \
   --policy-name ec2-and-s3-read \
   --policy-document "${POLICY_DOC}"
 
+POLICY_FILE="${ROOT}/minecraft/.bot-iam-policy.generated.json"
+printf '%s\n' "${POLICY_DOC}" > "${POLICY_FILE}"
+echo "Wrote ${POLICY_FILE} (for IAM console audit)."
+
+echo ""
+echo "Verifying with bot credentials from ${ENV_FILE}..."
+BOT_AK=""
+BOT_SK=""
+while IFS= read -r line || [[ -n "${line}" ]]; do
+  [[ -z "${line//[[:space:]]/}" || "${line}" =~ ^# ]] && continue
+  key="${line%%=*}"
+  val="${line#*=}"
+  case "${key}" in
+    AWS_ACCESS_KEY_ID) BOT_AK="${val}" ;;
+    AWS_SECRET_ACCESS_KEY) BOT_SK="${val}" ;;
+  esac
+done < "${ENV_FILE}"
+
+if [[ -n "${BOT_AK}" && -n "${BOT_SK}" ]]; then
+  INSTANCE_ID="${MINECRAFT_INSTANCE_ID:-}"
+  if [[ -z "${INSTANCE_ID}" && -f "${INSTANCE_ENV}" ]]; then
+    # shellcheck disable=SC1090
+    source "${INSTANCE_ENV}"
+    INSTANCE_ID="${INSTANCE_ID:-}"
+  fi
+  if [[ -n "${INSTANCE_ID}" ]]; then
+    if AWS_ACCESS_KEY_ID="${BOT_AK}" AWS_SECRET_ACCESS_KEY="${BOT_SK}" AWS_SESSION_TOKEN="" \
+      aws ssm send-command \
+        --instance-ids "${INSTANCE_ID}" \
+        --document-name AWS-RunShellScript \
+        --parameters 'commands=["echo ssm-ok"]' \
+        --region "${REGION}" \
+        --output text --query Command.CommandId 2>/dev/null; then
+      echo "SSM verify OK for ${BOT_USER} on ${INSTANCE_ID}."
+    else
+      echo "Warning: policy updated but bot SSM test still failed." >&2
+      echo "Wait ~60s for IAM propagation, then: pnpm run minecraft:verify-ssm" >&2
+    fi
+  fi
+else
+  echo "Skip SSM verify (no bot keys in ${ENV_FILE}). Run: pnpm run minecraft:verify-ssm"
+fi
+
 echo "Done. Bot can start/stop any EC2 instance tagged Project=${PROJECT_NAME}."

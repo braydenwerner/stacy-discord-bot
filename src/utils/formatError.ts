@@ -37,7 +37,7 @@ export function formatErrorForUser(error: unknown): string {
       return "I can't stop the Minecraft server — the bot AWS account is missing EC2 stop permission. An admin needs to update the stacy-mc-bot IAM policy.";
     }
     if (/s3:ListBucket|s3:GetObject|s3:PutObject/i.test(raw)) {
-      return "I can't access the Minecraft backup bucket — the bot AWS account is missing S3 permission.";
+      return "I can't access the Minecraft backup bucket — run `pnpm run minecraft:update-bot-iam` with admin AWS credentials (not the bot user) to refresh S3 permissions.";
     }
     if (/cloudwatch:|ce:GetCost|budgets:/i.test(raw)) {
       return "I can't read AWS usage data — the bot AWS account is missing billing permission.";

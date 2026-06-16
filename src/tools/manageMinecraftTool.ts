@@ -1,18 +1,21 @@
 import {
-  formatMinecraftStartResult,
-  formatMinecraftStatus,
-  formatMinecraftStopResult,
-} from "@/utils/minecraft/formatServerStatus";
+  buildMinecraftBackupsEmbed,
+  buildMinecraftStartEmbed,
+  buildMinecraftStatusEmbed,
+  buildMinecraftStopEmbed,
+} from "@/utils/minecraft/minecraftEmbeds";
+import { isMinecraftBackupConfigured } from "@/utils/minecraft/minecraftBackups";
+import {
+  getMinecraftBackupReport,
+  getMinecraftHealth,
+} from "@/utils/minecraft/minecraftObservability";
+import { getMinecraftObserveEmbed } from "@/utils/minecraft/runMinecraftObserve";
 import { getMinecraftConfigError } from "@/utils/minecraft/minecraftConfig";
 import {
   getMinecraftServerState,
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
-import { buildMinecraftBackupsEmbed } from "@/utils/minecraft/minecraftEmbeds";
-import { isMinecraftBackupConfigured } from "@/utils/minecraft/minecraftBackups";
-import { getMinecraftBackupReport } from "@/utils/minecraft/minecraftObservability";
-import { runMinecraftObserve } from "@/utils/minecraft/runMinecraftObserve";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { formatError, formatErrorForUser } from "@/utils/formatError";
@@ -24,22 +27,14 @@ export const manageMinecraftTool = new DynamicStructuredTool({
   name: "manageMinecraft",
   description:
     "Control or inspect the AWS Minecraft server. " +
-    "Use start/wake/boot, stop/shut down, status (EC2 only), health (port + service + players), " +
+    "Use start/wake/boot, stop/shut down, status (EC2 + port + service + players), " +
     "logs (recent Paper/system logs), backups (S3 archive list), or metrics (CPU, EBS IOPS/throughput, network, load/mem/disk). " +
     "Anyone can start or inspect; stop requires Equality role, server admin, or bot owner.",
   schema: z.object({
     action: z
-      .enum([
-        "start",
-        "stop",
-        "status",
-        "health",
-        "logs",
-        "backups",
-        "metrics",
-      ])
+      .enum(["start", "stop", "status", "logs", "backups", "metrics"])
       .describe(
-        "start/stop/status = EC2 control; health/logs/backups/metrics = observability",
+        "start/stop/status = EC2 control; logs/backups/metrics = observability",
       ),
     logLines: z
       .number()
@@ -60,28 +55,25 @@ export const manageMinecraftTool = new DynamicStructuredTool({
 
     try {
       if (action === "status") {
-        const state = await getMinecraftServerState();
-        const text = formatMinecraftStatus(state);
-        await message.reply(text);
-        return toolOk(text);
+        const health = await getMinecraftHealth();
+        const embed = buildMinecraftStatusEmbed(health);
+        await message.reply({ embeds: [embed] });
+        return toolOk(`Minecraft status: EC2 ${health.ec2State}`);
       }
 
       if (action === "start") {
         const before = await getMinecraftServerState();
         const after = await startMinecraftServer();
-        const text = formatMinecraftStartResult(before, after);
-        await message.reply(text);
-        return toolOk(text);
+        const health = await getMinecraftHealth();
+        const embed = buildMinecraftStartEmbed(before, after, health);
+        await message.reply({ embeds: [embed] });
+        return toolOk(`Minecraft start: EC2 ${after.state}`);
       }
 
-      if (
-        action === "health" ||
-        action === "logs" ||
-        action === "metrics"
-      ) {
-        const text = await runMinecraftObserve(action, { logLines });
-        await message.reply(text);
-        return toolOk(text);
+      if (action === "logs" || action === "metrics") {
+        const embed = await getMinecraftObserveEmbed(action, { logLines });
+        await message.reply({ embeds: [embed] });
+        return toolOk(`Minecraft ${action} retrieved.`);
       }
 
       if (action === "backups") {
@@ -105,9 +97,10 @@ export const manageMinecraftTool = new DynamicStructuredTool({
 
       const before = await getMinecraftServerState();
       const after = await stopMinecraftServer();
-      const text = formatMinecraftStopResult(before, after);
-      await message.reply(text);
-      return toolOk(text);
+      const health = await getMinecraftHealth();
+      const embed = buildMinecraftStopEmbed(before, after, health);
+      await message.reply({ embeds: [embed] });
+      return toolOk(`Minecraft stop: EC2 ${after.state}`);
     } catch (error) {
       console.error("[manageMinecraft]", formatError(error));
       const text = formatErrorForUser(error);

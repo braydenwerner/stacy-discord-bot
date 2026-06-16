@@ -9,6 +9,12 @@ import { getMinecraftServerState } from "@/utils/minecraft/minecraftClient";
 const SSM_POLL_MS = 2000;
 const SSM_TIMEOUT_MS = 45_000;
 
+function isSsmInvocationPending(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const name = "name" in error ? String((error as { name?: string }).name) : "";
+  return name === "InvocationDoesNotExist";
+}
+
 function ssmClient(region: string): SSMClient {
   return new SSMClient({ region });
 }
@@ -103,12 +109,21 @@ async function runViaSsm(instanceId: string, region: string, shell: string): Pro
 
   const deadline = Date.now() + SSM_TIMEOUT_MS;
   while (Date.now() < deadline) {
-    const inv = await client.send(
-      new GetCommandInvocationCommand({
-        CommandId: commandId,
-        InstanceId: instanceId,
-      }),
-    );
+    let inv;
+    try {
+      inv = await client.send(
+        new GetCommandInvocationCommand({
+          CommandId: commandId,
+          InstanceId: instanceId,
+        }),
+      );
+    } catch (error) {
+      if (isSsmInvocationPending(error)) {
+        await new Promise((resolve) => setTimeout(resolve, SSM_POLL_MS));
+        continue;
+      }
+      throw error;
+    }
 
     const status = inv.Status;
     if (status === "Success") {
@@ -153,8 +168,7 @@ export async function runOnMinecraftHost(shell: string): Promise<string> {
       const reason =
         ssmError instanceof Error ? ssmError.message : String(ssmError);
       throw new Error(
-        `SSM failed (${reason}). Add SSM permissions to the bot IAM user and ` +
-          "AmazonSSMManagedInstanceCore to the EC2 role, or set MINECRAFT_SSH_KEY_PATH.",
+        `SSM failed (${reason}). If this persists, run \`pnpm run minecraft:update-bot-iam\` with admin AWS credentials, ensure the EC2 role includes AmazonSSMManagedInstanceCore, or set MINECRAFT_SSH_KEY_PATH.`,
       );
     }
     return runViaSsh(shell);

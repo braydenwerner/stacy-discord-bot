@@ -52,7 +52,7 @@ pnpm run start
 | `MINECRAFT_PORT` | no | Minecraft port (default `25565`) |
 | `MINECRAFT_NOTIFY_CHANNEL_ID` | no | Channel for backup + lifecycle notifications (default: `1511949691858718771`) |
 | `MINECRAFT_BACKUP_BUCKET` | no* | S3 backup bucket for the backup watcher and `/minecraft backups` |
-| `MINECRAFT_SSH_KEY_PATH` | no | Fallback path to EC2 SSH private key for logs/health when SSM is unavailable |
+| `MINECRAFT_SSH_KEY_PATH` | no | Fallback path to EC2 SSH private key for logs/status when SSM is unavailable |
 | `AWS_BUDGET_NAME` | no | AWS Budget name for `/cost` remaining-budget display |
 | `AWS_MONTHLY_BUDGET_USD` | no | Manual monthly cap (USD) when no AWS Budget exists |
 | `AWS_PROMO_CREDIT_USD` | no | Promo credit pool (USD) for estimated remaining credits |
@@ -221,7 +221,7 @@ Registered on `llmWithTools` in `src/utils/useMessageHistory.ts` and invoked fro
 
 | Tool | Parameters | What it does |
 |------|------------|--------------|
-| `manageMinecraft` | `action`: `start` \| `stop` \| `status` \| `health` \| `logs` \| `backups` \| `metrics`; optional `logLines` | EC2 control and observability (CPU, IOPS, logs, S3 backups) |
+| `manageMinecraft` | `action`: `start` \| `stop` \| `status` \| `logs` \| `backups` \| `metrics`; optional `logLines` | EC2 control and observability (CPU, IOPS, logs, S3 backups) |
 
 #### Web — anyone
 
@@ -250,7 +250,7 @@ Deploy with `pnpm run deployCommands`.
 | `/contact` | Equality | `add`, `remove`, `update` |
 | `/group` | Equality | `create`, `add-member`, `remove-member`, `delete`, `list`, `ping` |
 | `/cost` | Equality | Total AWS + OpenAI spend breakdown, credits, budget remaining |
-| `/minecraft` | start/status/health/logs/backups/metrics: everyone; stop: Equality | EC2 control + observability (port health, logs, S3 backups, CloudWatch metrics) |
+| `/minecraft` | start/status/logs/backups/metrics: everyone; stop: Equality | EC2 control + observability (status, logs, S3 backups, CloudWatch metrics) |
 | `/tone` | Bot owner | `nice-add`, `nice-remove`, `snarky-add` (alias for remove), `list` |
 
 **Directory admin** (contacts, groups, `/people`): **Equality** role, Discord **Administrator** or **Manage Server** permission, or bot owner (`STACY_OWNER_ID`).

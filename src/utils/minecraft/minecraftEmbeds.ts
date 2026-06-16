@@ -5,8 +5,12 @@ import type {
 import {
   formatBackupStamp,
   formatBytes,
+  truncateForDiscord,
+  type MinecraftHealth,
+  type MinecraftMetrics,
 } from "@/utils/minecraft/minecraftObservability";
 import type { MinecraftServerState } from "@/utils/minecraft/minecraftClient";
+import { STATE_LABEL } from "@/utils/minecraft/formatServerStatus";
 import {
   formatBackupStampPacific,
   formatPacificDateTime,
@@ -237,4 +241,229 @@ export function buildMinecraftBackupsEmbed(
   });
 
   return embed;
+}
+
+function statusColor(health: MinecraftHealth): number {
+  const state = health.ec2State;
+  if (state === "running") {
+    return health.portOpen ? COLORS.success : COLORS.warning;
+  }
+  if (state === "pending" || state === "stopping") return COLORS.warning;
+  if (state === "terminated") return COLORS.danger;
+  return COLORS.neutral;
+}
+
+function portLabel(portOpen: boolean | null): string {
+  if (portOpen === true) return "Open — Paper is accepting connections";
+  if (portOpen === false) {
+    return "Closed — boot or install may still be running";
+  }
+  return "Unknown";
+}
+
+function serviceLabel(serviceActive: boolean | null): string {
+  if (serviceActive === true) return "`minecraft.service` active";
+  if (serviceActive === false) return "`minecraft.service` inactive";
+  return "n/a";
+}
+
+function pct(used: number | null, cap: number | null): string {
+  if (used == null || cap == null || cap <= 0) return "";
+  return ` (${((used / cap) * 100).toFixed(1)}% of cap)`;
+}
+
+function fmtMbps(value: number | null): string {
+  if (value == null) return "n/a";
+  return `${value.toFixed(1)} MiB/s`;
+}
+
+function fmtIops(value: number | null): string {
+  if (value == null) return "n/a";
+  return value.toFixed(0);
+}
+
+export function buildMinecraftStatusEmbed(
+  health: MinecraftHealth,
+  options?: { note?: string },
+): EmbedBuilder {
+  const label = STATE_LABEL[health.ec2State] ?? health.ec2State;
+  const instanceId = process.env.MINECRAFT_INSTANCE_ID;
+  const ec2Url = instanceId ? ec2InstanceConsoleUrl(instanceId) : null;
+
+  const embed = new EmbedBuilder()
+    .setColor(statusColor(health))
+    .setTitle("Minecraft server status")
+    .setFooter({ text: "Minecraft · status" })
+    .setTimestamp();
+
+  if (ec2Url) embed.setURL(ec2Url);
+
+  let description = "";
+  if (health.ec2State === "stopped") {
+    description = "Use `/minecraft start` to wake the server (~1 minute).";
+  } else if (health.ec2State === "pending") {
+    description = "EC2 is booting — Minecraft should be ready in about a minute.";
+  } else if (health.ec2State !== "running") {
+    description = "Start the instance to play.";
+  }
+  if (options?.note) {
+    description = description ? `${description}\n\n${options.note}` : options.note;
+  }
+  if (description) embed.setDescription(description);
+
+  embed.addFields({ name: "EC2", value: label, inline: true });
+
+  if (health.ec2State === "running") {
+    embed.addFields(
+      { name: "Port", value: portLabel(health.portOpen), inline: true },
+      { name: "Service", value: serviceLabel(health.serviceActive), inline: true },
+    );
+    if (health.playerSummary) {
+      embed.addFields({ name: "Players", value: health.playerSummary });
+    }
+  }
+
+  if (health.connectAddress) {
+    embed.addFields({ name: "Connect", value: `\`${health.connectAddress}\`` });
+  }
+
+  if (ec2Url) {
+    embed.addFields({ name: "AWS", value: `[Open EC2 instance](${ec2Url})` });
+  }
+
+  return embed;
+}
+
+export function buildMinecraftMetricsEmbed(metrics: MinecraftMetrics): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(COLORS.info)
+    .setTitle("Minecraft metrics")
+    .setDescription(`CloudWatch ~${metrics.windowMinutes}m window`)
+    .setFooter({ text: "Minecraft · metrics" })
+    .setTimestamp();
+
+  if (metrics.instanceType) {
+    embed.addFields({
+      name: "Instance",
+      value: `\`${metrics.instanceType}\``,
+      inline: true,
+    });
+  }
+
+  embed.addFields({
+    name: "CPU",
+    value:
+      metrics.cpuPercent != null
+        ? `${metrics.cpuPercent.toFixed(1)}%`
+        : "n/a",
+    inline: true,
+  });
+
+  if (metrics.networkInMbps != null || metrics.networkOutMbps != null) {
+    embed.addFields({
+      name: "Network",
+      value: `In ${fmtMbps(metrics.networkInMbps)} · Out ${fmtMbps(metrics.networkOutMbps)}`,
+      inline: true,
+    });
+  }
+
+  if (metrics.volume) {
+    const { volumeId, sizeGb, iops, throughputMbps } = metrics.volume;
+    const capIops = iops ?? 0;
+    const capTp = throughputMbps ?? 0;
+    embed.addFields({
+      name: "EBS volume",
+      value:
+        `\`${volumeId}\` · ${sizeGb} GB gp3` +
+        (iops ? ` · ${iops} IOPS / ${throughputMbps ?? "?"} MiB/s provisioned` : ""),
+    });
+
+    const totalIops =
+      metrics.readIops != null && metrics.writeIops != null
+        ? metrics.readIops + metrics.writeIops
+        : null;
+    embed.addFields({
+      name: "EBS IOPS",
+      value:
+        `Read ${fmtIops(metrics.readIops)} · Write ${fmtIops(metrics.writeIops)}` +
+        (totalIops != null
+          ? ` · Total ${fmtIops(totalIops)}${pct(totalIops, capIops)}`
+          : ""),
+    });
+    embed.addFields({
+      name: "EBS throughput",
+      value:
+        `Read ${fmtMbps(metrics.readThroughputMbps)} · Write ${fmtMbps(metrics.writeThroughputMbps)}` +
+        (metrics.readThroughputMbps != null &&
+        metrics.writeThroughputMbps != null &&
+        capTp > 0
+          ? pct(
+              metrics.readThroughputMbps + metrics.writeThroughputMbps,
+              capTp,
+            )
+          : ""),
+    });
+  }
+
+  const hostFields: { name: string; value: string; inline: boolean }[] = [];
+  if (metrics.loadAverage) {
+    hostFields.push({ name: "Load avg", value: metrics.loadAverage, inline: true });
+  }
+  if (metrics.memorySummary) {
+    hostFields.push({ name: "Memory", value: metrics.memorySummary, inline: true });
+  }
+  if (metrics.diskSummary) {
+    hostFields.push({ name: "Root disk", value: metrics.diskSummary, inline: true });
+  }
+  if (hostFields.length > 0) embed.addFields(hostFields);
+
+  if (
+    !metrics.loadAverage &&
+    !metrics.memorySummary &&
+    metrics.cpuPercent == null
+  ) {
+    embed.addFields({
+      name: "Note",
+      value:
+        "Host stats need SSM or SSH. CloudWatch needs `cloudwatch:GetMetricData` and `ec2:DescribeVolumes` on the bot IAM user.",
+    });
+  }
+
+  return embed;
+}
+
+export function buildMinecraftLogsEmbed(raw: string, lines: number): EmbedBuilder {
+  const body = truncateForDiscord(raw, 3900);
+  return new EmbedBuilder()
+    .setColor(COLORS.neutral)
+    .setTitle("Minecraft logs")
+    .setDescription(`Last **${lines}** lines per section.\n\`\`\`\n${body}\n\`\`\``)
+    .setFooter({ text: "Minecraft · logs" })
+    .setTimestamp();
+}
+
+export function buildMinecraftStartEmbed(
+  before: MinecraftServerState,
+  after: MinecraftServerState,
+  health: MinecraftHealth,
+): EmbedBuilder {
+  let note: string | undefined;
+  if (before.state === "running") note = "Already running.";
+  else if (after.state === "pending" || after.state === "running") {
+    note = "Booting the EC2 instance. Give it a minute, then connect.";
+  }
+  return buildMinecraftStatusEmbed(health, { note });
+}
+
+export function buildMinecraftStopEmbed(
+  before: MinecraftServerState,
+  after: MinecraftServerState,
+  health: MinecraftHealth,
+): EmbedBuilder {
+  let note: string | undefined;
+  if (before.state === "stopped") note = "Already stopped.";
+  else if (after.state === "stopping" || after.state === "stopped") {
+    note = "Stopping the instance. Compute billing stops once it reaches **Offline**.";
+  }
+  return buildMinecraftStatusEmbed(health, { note });
 }

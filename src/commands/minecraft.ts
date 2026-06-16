@@ -1,23 +1,28 @@
 import {
-  formatMinecraftStartResult,
-  formatMinecraftStatus,
-  formatMinecraftStopResult,
-} from "@/utils/minecraft/formatServerStatus";
+  buildMinecraftBackupsEmbed,
+  buildMinecraftLogsEmbed,
+  buildMinecraftMetricsEmbed,
+  buildMinecraftStartEmbed,
+  buildMinecraftStatusEmbed,
+  buildMinecraftStopEmbed,
+} from "@/utils/minecraft/minecraftEmbeds";
+import { isMinecraftBackupConfigured } from "@/utils/minecraft/minecraftBackups";
+import {
+  getMinecraftBackupReport,
+  getMinecraftHealth,
+} from "@/utils/minecraft/minecraftObservability";
+import { getMinecraftObserveEmbed } from "@/utils/minecraft/runMinecraftObserve";
 import { getMinecraftConfigError } from "@/utils/minecraft/minecraftConfig";
 import {
   getMinecraftServerState,
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
-import { buildMinecraftBackupsEmbed } from "@/utils/minecraft/minecraftEmbeds";
-import { isMinecraftBackupConfigured } from "@/utils/minecraft/minecraftBackups";
-import { getMinecraftBackupReport } from "@/utils/minecraft/minecraftObservability";
-import { runMinecraftObserve } from "@/utils/minecraft/runMinecraftObserve";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
 import { replyDenied, replyError } from "@/utils/slashReply";
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
-const OBSERVE_SUBCOMMANDS = new Set(["health", "logs", "backups", "metrics"]);
+const OBSERVE_SUBCOMMANDS = new Set(["logs", "backups", "metrics"]);
 
 export default {
   data: new SlashCommandBuilder()
@@ -29,12 +34,9 @@ export default {
         .setDescription("Wake the server (starts EC2; ~1 min until joinable)"),
     )
     .addSubcommand((sub) =>
-      sub.setName("status").setDescription("Show EC2 instance state"),
-    )
-    .addSubcommand((sub) =>
       sub
-        .setName("health")
-        .setDescription("Port, systemd service, and online players"),
+        .setName("status")
+        .setDescription("EC2 state, port, service, players, and connect info"),
     )
     .addSubcommand((sub) =>
       sub
@@ -75,10 +77,10 @@ export default {
 
     try {
       if (sub === "status") {
-        const state = await getMinecraftServerState();
-        await interaction.reply({
-          content: formatMinecraftStatus(state),
-          ephemeral: true,
+        await interaction.deferReply({ ephemeral: true });
+        const health = await getMinecraftHealth();
+        await interaction.editReply({
+          embeds: [buildMinecraftStatusEmbed(health)],
         });
         return;
       }
@@ -102,11 +104,11 @@ export default {
           sub === "logs"
             ? (interaction.options.getInteger("lines") ?? 25)
             : undefined;
-        const text = await runMinecraftObserve(
-          sub as "health" | "logs" | "metrics",
+        const embed = await getMinecraftObserveEmbed(
+          sub as "logs" | "metrics",
           { logLines },
         );
-        await interaction.editReply(text);
+        await interaction.editReply({ embeds: [embed] });
         return;
       }
 
@@ -114,7 +116,10 @@ export default {
         await interaction.deferReply({ ephemeral: true });
         const before = await getMinecraftServerState();
         const after = await startMinecraftServer();
-        await interaction.editReply(formatMinecraftStartResult(before, after));
+        const health = await getMinecraftHealth();
+        await interaction.editReply({
+          embeds: [buildMinecraftStartEmbed(before, after, health)],
+        });
         return;
       }
 
@@ -127,7 +132,10 @@ export default {
         await interaction.deferReply({ ephemeral: true });
         const before = await getMinecraftServerState();
         const after = await stopMinecraftServer();
-        await interaction.editReply(formatMinecraftStopResult(before, after));
+        const health = await getMinecraftHealth();
+        await interaction.editReply({
+          embeds: [buildMinecraftStopEmbed(before, after, health)],
+        });
       }
     } catch (error) {
       await replyError(interaction, error);

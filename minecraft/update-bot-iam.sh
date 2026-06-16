@@ -72,12 +72,7 @@ POLICY_DOC="$(cat <<EOF
     {
       "Effect": "Allow",
       "Action": ["s3:ListBucket"],
-      "Resource": "arn:aws:s3:::${BUCKET}",
-      "Condition": {
-        "StringLike": {
-          "s3:prefix": ["data-*", "events/*"]
-        }
-      }
+      "Resource": "arn:aws:s3:::${BUCKET}"
     },
     {
       "Effect": "Allow",

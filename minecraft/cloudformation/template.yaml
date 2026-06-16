@@ -172,7 +172,9 @@ Resources:
                 Condition:
                   StringLike:
                     s3:prefix:
+                      - data-
                       - data-*
+                      - events/
                       - events/*
               - Effect: Allow
                 Action:
@@ -277,11 +279,6 @@ Resources:
                 Action:
                   - s3:ListBucket
                 Resource: !GetAtt McBackupsBucket.Arn
-                Condition:
-                  StringLike:
-                    s3:prefix:
-                      - data-*
-                      - events/*
               - Effect: Allow
                 Action:
                   - s3:GetObject

@@ -40,7 +40,7 @@ After deploy, set Pi `.env` from stack outputs (`InstanceId`, `BackupBucket`, bo
 
 Stacy polls S3 every 2 minutes for new backups and idle-shutdown events, and EC2 state every 2 minutes. Messages go to `MINECRAFT_NOTIFY_CHANNEL_ID` on the Pi.
 
-**Observability** (via `/minecraft` or `manageMinecraft`): `health`, `logs`, `backups`, `metrics`. Metrics use CloudWatch (CPU, EBS IOPS/throughput, network) plus SSM for load/memory/disk on the instance. Redeploy the CloudFormation stack (or update the bot IAM user) for `cloudwatch:GetMetricData`, `ec2:DescribeVolumes`, and SSM permissions.
+**Observability** (via `/minecraft` or `manageMinecraft`): `status`, `logs`, `backups`, `metrics`. Status includes EC2 state, port, service, and players. Metrics use CloudWatch (CPU, EBS IOPS/throughput, network) plus SSM for load/memory/disk on the instance. Redeploy the CloudFormation stack (or update the bot IAM user) for `cloudwatch:GetMetricData`, `ec2:DescribeVolumes`, and SSM permissions.
 
 If `/minecraft start` fails with an IAM access error, the bot user policy may still reference an old instance ID. Redeploy the stack **or** run (with **admin** AWS credentials, not the bot user):
 
@@ -48,7 +48,7 @@ If `/minecraft start` fails with an IAM access error, the bot user policy may st
 pnpm run minecraft:update-bot-iam
 ```
 
-That applies a tag-based policy (`Project=stacy-mc`) so start/stop works after instance replacement.
+That applies a tag-based policy (`Project=stacy-mc`) so start/stop works after instance replacement, and grants `s3:ListBucket` on the backup bucket (required for backup and idle-shutdown watchers).
 
 Edit `server/` scripts, then re-run `./deploy.sh`.
 

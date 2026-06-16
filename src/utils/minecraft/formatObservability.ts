@@ -75,7 +75,7 @@ export function formatMinecraftBackups(
   const lines = [`**Minecraft S3 backups**`, `Bucket: \`${bucket}\``];
 
   if (backups.length === 0) {
-    lines.push("No archives found under `archives/`.");
+    lines.push("No world backups found in the bucket root.");
     return lines.join("\n");
   }
 

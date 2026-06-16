@@ -75,7 +75,7 @@ POLICY_DOC="$(cat <<EOF
       "Resource": "arn:aws:s3:::${BUCKET}",
       "Condition": {
         "StringLike": {
-          "s3:prefix": ["archives/*", "events/*"]
+          "s3:prefix": ["data-*", "events/*"]
         }
       }
     },

@@ -7,7 +7,8 @@ import {
   formatBackupStamp,
   getBackupSource,
   isMinecraftBackupConfigured,
-  MINECRAFT_ARCHIVES_PREFIX,
+  isMinecraftBackupKey,
+  MINECRAFT_BACKUP_KEY_PREFIX,
   minecraftBackupBucket,
 } from "@/utils/minecraft/minecraftBackups";
 import { buildBackupSavedEmbed } from "@/utils/minecraft/minecraftEmbeds";
@@ -30,8 +31,7 @@ export function isMinecraftBackupWatchConfigured(): boolean {
 
 function latestBackup(objects: _Object[]): _Object | null {
   const backups = objects.filter(
-    (obj) =>
-      obj.Key?.startsWith(MINECRAFT_ARCHIVES_PREFIX) && obj.Key.endsWith(".tar.gz"),
+    (obj) => obj.Key && isMinecraftBackupKey(obj.Key),
   );
   if (backups.length === 0) return null;
 
@@ -47,7 +47,7 @@ async function pollBackups(client: Client): Promise<void> {
 
   try {
     const res = await s3Client().send(
-      new ListObjectsV2Command({ Bucket: bucket, Prefix: MINECRAFT_ARCHIVES_PREFIX }),
+      new ListObjectsV2Command({ Bucket: bucket, Prefix: MINECRAFT_BACKUP_KEY_PREFIX }),
     );
 
     const newest = latestBackup(res.Contents ?? []);

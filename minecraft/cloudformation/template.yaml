@@ -172,7 +172,8 @@ Resources:
                 Condition:
                   StringLike:
                     s3:prefix:
-                      - archives/*
+                      - data-*
+                      - events/*
               - Effect: Allow
                 Action:
                   - s3:PutObject
@@ -279,7 +280,7 @@ Resources:
                 Condition:
                   StringLike:
                     s3:prefix:
-                      - archives/*
+                      - data-*
                       - events/*
               - Effect: Allow
                 Action:

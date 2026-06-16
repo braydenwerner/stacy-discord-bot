@@ -2,9 +2,14 @@ import {
   HeadObjectCommand,
   ListObjectsV2Command,
   S3Client,
+  type _Object,
 } from "@aws-sdk/client-s3";
 
-export const MINECRAFT_ARCHIVES_PREFIX = "archives/";
+/** Top-level S3 key prefix for world backup tarballs (e.g. data-20260605T180006Z.tar.gz). */
+export const MINECRAFT_BACKUP_KEY_PREFIX = "data-";
+
+/** Legacy path from before backups moved to bucket root. */
+const LEGACY_BACKUP_PREFIX = "archives/data-";
 
 export type BackupSource = "periodic" | "idle" | "stop" | "manual";
 
@@ -29,8 +34,22 @@ export function isMinecraftBackupConfigured(): boolean {
   return !!(process.env.AWS_REGION && minecraftBackupBucket());
 }
 
-function isBackupKey(key: string): boolean {
-  return key.startsWith(MINECRAFT_ARCHIVES_PREFIX) && key.endsWith(".tar.gz");
+export function isMinecraftBackupKey(key: string): boolean {
+  if (!key.endsWith(".tar.gz") || key.startsWith("events/")) return false;
+  return (
+    key.startsWith(MINECRAFT_BACKUP_KEY_PREFIX) ||
+    key.startsWith(LEGACY_BACKUP_PREFIX)
+  );
+}
+
+async function listBackupObjects(
+  bucket: string,
+  prefix: string,
+): Promise<_Object[]> {
+  const res = await s3Client().send(
+    new ListObjectsV2Command({ Bucket: bucket, Prefix: prefix }),
+  );
+  return res.Contents ?? [];
 }
 
 export async function listMinecraftBackups(
@@ -41,12 +60,13 @@ export async function listMinecraftBackups(
     throw new Error("MINECRAFT_BACKUP_BUCKET is not set.");
   }
 
-  const res = await s3Client().send(
-    new ListObjectsV2Command({ Bucket: bucket, Prefix: MINECRAFT_ARCHIVES_PREFIX }),
-  );
+  const [current, legacy] = await Promise.all([
+    listBackupObjects(bucket, MINECRAFT_BACKUP_KEY_PREFIX),
+    listBackupObjects(bucket, LEGACY_BACKUP_PREFIX),
+  ]);
 
-  const backups = (res.Contents ?? [])
-    .filter((obj) => obj.Key && isBackupKey(obj.Key))
+  const backups = [...current, ...legacy]
+    .filter((obj) => obj.Key && isMinecraftBackupKey(obj.Key))
     .map((obj) => ({
       key: obj.Key!,
       lastModified: obj.LastModified ?? null,
@@ -63,7 +83,7 @@ export async function listMinecraftBackups(
 
 export function formatBackupStamp(key: string): string {
   return key
-    .replace(MINECRAFT_ARCHIVES_PREFIX, "")
+    .replace(/^archives\//, "")
     .replace(/^data-/, "")
     .replace(/\.tar\.gz$/, "");
 }
@@ -85,4 +105,3 @@ export async function getBackupSource(key: string): Promise<BackupSource> {
   }
   return "manual";
 }
-

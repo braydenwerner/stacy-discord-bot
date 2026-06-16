@@ -213,7 +213,7 @@ export function buildMinecraftBackupsEmbed(
 
   if (backups.length === 0) {
     embed.setDescription(
-      `Bucket: [Open in AWS Console](${bucketUrl})\n\`${bucket}\`\n\nNo archives found under \`archives/\`.`,
+      `Bucket: [Open in AWS Console](${bucketUrl})\n\`${bucket}\`\n\nNo world backups found in the bucket root.`,
     );
     return embed;
   }

@@ -9,7 +9,7 @@ AWS_REGION="${2:-us-east-1}"
 SERVER_DIR="${MINECRAFT_DIR:-/opt/minecraft/server}"
 WORLD_DIR="${SERVER_DIR}/world"
 KEEP_COUNT="${BACKUP_KEEP_COUNT:-30}"
-ARCHIVE_PREFIX="archives/data-"
+ARCHIVE_PREFIX="data-"
 
 if [[ -z "${BACKUP_BUCKET}" ]]; then
   echo "Usage: backup-world.sh <s3-bucket> [aws-region]" >&2

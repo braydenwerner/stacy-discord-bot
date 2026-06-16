@@ -60,6 +60,12 @@ export async function startMinecraftServer(): Promise<MinecraftServerState> {
   const { instanceId, region } = requireConfig();
   const before = await getMinecraftServerState();
 
+  if (before.state === "terminated") {
+    throw new Error(
+      "Minecraft EC2 instance is terminated. Redeploy the stack or update MINECRAFT_INSTANCE_ID to the current instance.",
+    );
+  }
+
   if (before.state === "running") {
     return before;
   }

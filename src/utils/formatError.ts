@@ -31,7 +31,7 @@ export function formatErrorForUser(error: unknown): string {
 
   if (isAwsAccessDenied(raw)) {
     if (/ec2:StartInstances/i.test(raw)) {
-      return "I can't start the Minecraft server — the bot AWS account is missing EC2 start permission. An admin needs to update the stacy-mc-bot IAM policy.";
+      return "I can't start the Minecraft server — the bot AWS account is missing EC2 start permission, or MINECRAFT_INSTANCE_ID points at the wrong instance. An admin should run `pnpm run minecraft:update-bot-iam` and verify the instance ID in bot.env.";
     }
     if (/ec2:StopInstances/i.test(raw)) {
       return "I can't stop the Minecraft server — the bot AWS account is missing EC2 stop permission. An admin needs to update the stacy-mc-bot IAM policy.";

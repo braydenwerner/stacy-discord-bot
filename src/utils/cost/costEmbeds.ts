@@ -8,6 +8,15 @@ function usd(amount: number): string {
   return `$${amount.toFixed(2)}`;
 }
 
+/** Whole dollars when even ($20); otherwise two decimals ($114.25). */
+export function usdShort(amount: number): string {
+  const rounded = Math.round(amount * 100) / 100;
+  if (Math.abs(rounded - Math.round(rounded)) < 0.005) {
+    return `$${Math.round(rounded)}`;
+  }
+  return `$${rounded.toFixed(2)}`;
+}
+
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
@@ -99,22 +108,30 @@ export function buildBudgetAlertEmbed(params: {
   periodStart: string;
   periodEnd: string;
   promoRemainingUsd: number | null;
+  alertTier: number;
 }): EmbedBuilder {
+  const markUsd = params.thresholdUsd * params.alertTier;
   const embed = new EmbedBuilder()
     .setColor(ALERT_COLOR)
     .setTitle("AWS budget alert")
     .setDescription(
-      `Activate credits used in the last **${params.windowDays} days** exceeded **${usd(params.thresholdUsd)}**.`,
+      `Activate credits used in the last **${params.windowDays} days** crossed **${usdShort(markUsd)}** ` +
+        `(alert every ${usdShort(params.thresholdUsd)}).`,
     )
     .addFields(
       {
         name: "Credits used",
-        value: usd(params.creditsUsedUsd),
+        value: usdShort(params.creditsUsedUsd),
         inline: true,
       },
       {
         name: "Alert threshold",
-        value: `${usd(params.thresholdUsd)} / ${params.windowDays} days`,
+        value: `${usdShort(params.thresholdUsd)} increments / ${params.windowDays} days`,
+        inline: true,
+      },
+      {
+        name: "Milestone",
+        value: usdShort(markUsd),
         inline: true,
       },
       {
@@ -128,7 +145,7 @@ export function buildBudgetAlertEmbed(params: {
   if (params.promoRemainingUsd != null) {
     embed.addFields({
       name: "Credits remaining (est.)",
-      value: usd(params.promoRemainingUsd),
+      value: usdShort(params.promoRemainingUsd),
       inline: true,
     });
   }

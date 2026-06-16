@@ -11,49 +11,61 @@ import {
   promoCreditPoolUsd,
 } from "@/utils/aws/awsConfig";
 import { getAwsCreditsUsedForDays, getAwsCostSummary } from "@/utils/aws/awsCostSummary";
-import { buildBudgetAlertEmbed } from "@/utils/cost/costEmbeds";
+import { buildBudgetAlertEmbed, usdShort } from "@/utils/cost/costEmbeds";
 import { getStacyOwnerId } from "@/utils/stacyOwner";
 import type { Client } from "discord.js";
 
 const POLL_INTERVAL_MS = 6 * MS_IN_ONE_HOUR;
-const LAST_ALERT_AT_KEY = "cost_budget_alert_last_at";
-const LAST_ALERT_AMOUNT_KEY = "cost_budget_alert_last_amount";
+const LAST_ALERT_TIER_KEY = "cost_budget_alert_last_tier";
+/** @deprecated migrated to tier key */
+const LEGACY_LAST_ALERT_AMOUNT_KEY = "cost_budget_alert_last_amount";
 
 let timer: NodeJS.Timeout | null = null;
 
 function clearAlertState(): void {
-  setMinecraftWatchValue(LAST_ALERT_AT_KEY, "");
-  setMinecraftWatchValue(LAST_ALERT_AMOUNT_KEY, "");
+  setMinecraftWatchValue(LAST_ALERT_TIER_KEY, "");
+  setMinecraftWatchValue(LEGACY_LAST_ALERT_AMOUNT_KEY, "");
 }
 
-function shouldSendAlert(
-  creditsUsedUsd: number,
-  thresholdUsd: number,
-  windowDays: number,
-): boolean {
-  const lastAtRaw = getMinecraftWatchValue(LAST_ALERT_AT_KEY);
-  const lastAmountRaw = getMinecraftWatchValue(LAST_ALERT_AMOUNT_KEY);
+/** Each full thresholdUsd of spend in the window is one alert tier ($20, $40, …). */
+function spendTier(creditsUsedUsd: number, thresholdUsd: number): number {
+  if (creditsUsedUsd < thresholdUsd) return 0;
+  return Math.floor(creditsUsedUsd / thresholdUsd);
+}
 
-  if (creditsUsedUsd < thresholdUsd) {
-    if (lastAtRaw || lastAmountRaw) clearAlertState();
-    return false;
+function lastAlertedTier(thresholdUsd: number): number {
+  const tierRaw = getMinecraftWatchValue(LAST_ALERT_TIER_KEY);
+  if (tierRaw) {
+    const tier = Number.parseInt(tierRaw, 10);
+    if (Number.isFinite(tier) && tier >= 0) return tier;
   }
 
-  if (!lastAtRaw) return true;
-
-  const lastAmount = Number.parseFloat(lastAmountRaw ?? "0");
-  if (
-    Number.isFinite(lastAmount) &&
-    creditsUsedUsd >= lastAmount + thresholdUsd
-  ) {
-    return true;
+  const legacyAmount = getMinecraftWatchValue(LEGACY_LAST_ALERT_AMOUNT_KEY);
+  if (legacyAmount) {
+    const amount = Number.parseFloat(legacyAmount);
+    if (Number.isFinite(amount)) {
+      const tier = spendTier(amount, thresholdUsd);
+      if (tier > 0) {
+        setMinecraftWatchValue(LAST_ALERT_TIER_KEY, String(tier));
+        setMinecraftWatchValue(LEGACY_LAST_ALERT_AMOUNT_KEY, "");
+      }
+      return tier;
+    }
   }
 
-  const lastAt = Date.parse(lastAtRaw);
-  if (Number.isNaN(lastAt)) return true;
+  return 0;
+}
 
-  const remindAfterMs = windowDays * 24 * MS_IN_ONE_HOUR;
-  return Date.now() - lastAt >= remindAfterMs;
+function shouldSendAlert(creditsUsedUsd: number, thresholdUsd: number): number | null {
+  const tier = spendTier(creditsUsedUsd, thresholdUsd);
+  if (tier === 0) {
+    if (getMinecraftWatchValue(LAST_ALERT_TIER_KEY)) clearAlertState();
+    return null;
+  }
+
+  const lastTier = lastAlertedTier(thresholdUsd);
+  if (tier <= lastTier) return null;
+  return tier;
 }
 
 async function resolveAlertChannel(client: Client) {
@@ -77,7 +89,8 @@ async function pollBudgetAlert(client: Client): Promise<void> {
     const { creditsUsedUsd, periodStart, periodEnd } =
       await getAwsCreditsUsedForDays(windowDays);
 
-    if (!shouldSendAlert(creditsUsedUsd, thresholdUsd, windowDays)) return;
+    const alertTier = shouldSendAlert(creditsUsedUsd, thresholdUsd);
+    if (alertTier == null) return;
 
     const promoRemainingUsd = promoCreditPoolUsd()
       ? (await getAwsCostSummary()).promoCreditRemainingUsd
@@ -90,25 +103,26 @@ async function pollBudgetAlert(client: Client): Promise<void> {
       periodStart,
       periodEnd,
       promoRemainingUsd,
+      alertTier,
     });
 
     const channel = await resolveAlertChannel(client);
     if (!channel) return;
 
     const ownerId = getStacyOwnerId();
+    const markUsd = thresholdUsd * alertTier;
     await channel.send({
-      content: `<@${ownerId}> AWS Activate credits passed ${thresholdUsd.toFixed(0)} USD in the last ${windowDays} days.`,
+      content:
+        `<@${ownerId}> AWS Activate credits reached **${usdShort(markUsd)}** ` +
+        `in the last ${windowDays} days (${usdShort(creditsUsedUsd)} used).`,
       embeds: [embed],
     });
 
-    setMinecraftWatchValue(LAST_ALERT_AT_KEY, new Date().toISOString());
-    setMinecraftWatchValue(
-      LAST_ALERT_AMOUNT_KEY,
-      creditsUsedUsd.toFixed(2),
-    );
+    setMinecraftWatchValue(LAST_ALERT_TIER_KEY, String(alertTier));
 
     console.warn(
-      `[cost] budget alert sent: ${creditsUsedUsd.toFixed(2)} USD used in ${windowDays}d (threshold ${thresholdUsd})`,
+      `[cost] budget alert sent: tier ${alertTier} (${usdShort(markUsd)}) — ` +
+        `${usdShort(creditsUsedUsd)} used in ${windowDays}d`,
     );
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
@@ -129,7 +143,7 @@ export function startCostBudgetWatcher(client: Client): void {
 
   console.log(
     `[cost] budget alert watcher started (every ${POLL_INTERVAL_MS / MS_IN_ONE_HOUR}h, ` +
-      `threshold $${awsBudgetAlertUsd()} / ${awsBudgetAlertDays()} days)`,
+      `${usdShort(awsBudgetAlertUsd()!)} increments / ${awsBudgetAlertDays()} days)`,
   );
 }
 

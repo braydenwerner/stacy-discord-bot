@@ -124,6 +124,23 @@ async function fetchCost(
   return { total: sumUnblendedCost(output), services: [] };
 }
 
+/** Activate credits consumed over the trailing N days (Cost Explorer). */
+export async function getAwsCreditsUsedForDays(days: number): Promise<{
+  creditsUsedUsd: number;
+  periodStart: string;
+  periodEnd: string;
+}> {
+  const now = new Date();
+  const periodStart = isoDate(addUtcDays(now, -days));
+  const periodEnd = isoDate(now);
+  const nextDay = isoDate(addUtcDays(now, 1));
+
+  const credits = await fetchCost(periodStart, nextDay, { creditOnly: true });
+  const creditsUsedUsd = Math.abs(Math.min(0, credits.total));
+
+  return { creditsUsedUsd, periodStart, periodEnd };
+}
+
 /** AWS Activate credits used in the configured billing window (default trailing 12 months). */
 export async function getAwsCostSummary(): Promise<AwsCostSummary> {
   const now = new Date();

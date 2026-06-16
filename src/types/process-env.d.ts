@@ -45,6 +45,12 @@ declare global {
       AWS_ACCOUNT_ID?: string;
       /** Start date for AWS total cost window (YYYY-MM-DD, default trailing 12 months) */
       AWS_BILLING_SINCE?: string;
+      /** Rolling-window credit spend alert threshold USD (default 20; set 0 to disable) */
+      AWS_BUDGET_ALERT_USD?: string;
+      /** Rolling window days for budget alert (default 30) */
+      AWS_BUDGET_ALERT_DAYS?: string;
+      /** Discord channel for budget alerts (defaults to MINECRAFT_NOTIFY_CHANNEL_ID) */
+      AWS_BUDGET_ALERT_CHANNEL_ID?: string;
     }
   }
 }

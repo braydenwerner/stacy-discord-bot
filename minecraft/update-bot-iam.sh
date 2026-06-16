@@ -75,15 +75,17 @@ POLICY_DOC="$(cat <<EOF
     {
       "Effect": "Allow",
       "Action": ["ssm:SendCommand"],
-      "Resource": [
-        "arn:aws:ec2:${REGION}:${ACCOUNT_ID}:instance/*",
-        "arn:aws:ssm:${REGION}::document/AWS-RunShellScript"
-      ],
+      "Resource": "arn:aws:ec2:${REGION}:${ACCOUNT_ID}:instance/*",
       "Condition": {
         "StringEquals": {
-          "aws:ResourceTag/Project": "${PROJECT_NAME}"
+          "ec2:ResourceTag/Project": "${PROJECT_NAME}"
         }
       }
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["ssm:SendCommand"],
+      "Resource": "arn:aws:ssm:${REGION}::document/AWS-RunShellScript"
     },
     {
       "Effect": "Allow",

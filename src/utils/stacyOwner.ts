@@ -14,6 +14,10 @@ export function ownerOnlyMessage(): string {
   return "Only the bot owner can change who gets the nice or snarky tone.";
 }
 
+export function minecraftConsoleOwnerMessage(): string {
+  return "Only the bot owner can run Minecraft server console commands.";
+}
+
 export function requireStacyOwnerMessage(
   message: Message,
 ): string | null {
@@ -26,4 +30,11 @@ export function requireStacyOwnerInteraction(
 ): string | null {
   if (isStacyOwner(interaction.user.id)) return null;
   return ownerOnlyMessage();
+}
+
+export function requireStacyOwnerForMinecraftConsoleInteraction(
+  interaction: ChatInputCommandInteraction,
+): string | null {
+  if (isStacyOwner(interaction.user.id)) return null;
+  return minecraftConsoleOwnerMessage();
 }

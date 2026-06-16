@@ -40,3 +40,28 @@ export function promoCreditPoolUsd(): number | null {
   const value = Number.parseFloat(raw);
   return Number.isFinite(value) && value > 0 ? value : null;
 }
+
+/** Rolling-window Activate credit spend that triggers a Discord alert (default $20). */
+export function awsBudgetAlertUsd(): number | null {
+  const raw = process.env.AWS_BUDGET_ALERT_USD?.trim();
+  if (raw === "0" || raw?.toLowerCase() === "false") return null;
+  if (!raw) return 20;
+  const value = Number.parseFloat(raw);
+  return Number.isFinite(value) && value > 0 ? value : 20;
+}
+
+/** Rolling window length for budget alerts in days (default 30). */
+export function awsBudgetAlertDays(): number {
+  const raw = process.env.AWS_BUDGET_ALERT_DAYS?.trim();
+  if (!raw) return 30;
+  const value = Number.parseInt(raw, 10);
+  return Number.isFinite(value) && value > 0 ? value : 30;
+}
+
+export function awsBudgetAlertChannelId(): string {
+  return (
+    process.env.AWS_BUDGET_ALERT_CHANNEL_ID?.trim() ||
+    process.env.MINECRAFT_NOTIFY_CHANNEL_ID?.trim() ||
+    "1511949691858718771"
+  );
+}

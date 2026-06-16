@@ -1,5 +1,6 @@
 import {
   buildMinecraftBackupsEmbed,
+  buildMinecraftCommandEmbed,
   buildMinecraftLogsEmbed,
   buildMinecraftMetricsEmbed,
   buildMinecraftStartEmbed,
@@ -18,7 +19,9 @@ import {
   startMinecraftServer,
   stopMinecraftServer,
 } from "@/utils/minecraft/minecraftClient";
+import { runMinecraftConsoleCommand } from "@/utils/minecraft/minecraftRcon";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
+import { requireStacyOwnerForMinecraftConsoleInteraction } from "@/utils/stacyOwner";
 import { replyDenied, replyError } from "@/utils/slashReply";
 import { ChatInputCommandInteraction, SlashCommandBuilder } from "discord.js";
 
@@ -59,6 +62,18 @@ export default {
       sub
         .setName("metrics")
         .setDescription("CPU, EBS IOPS/throughput, network, load, memory, disk"),
+    )
+    .addSubcommand((sub) =>
+      sub
+        .setName("command")
+        .setDescription("Run a server console command via RCON (bot owner only)")
+        .addStringOption((opt) =>
+          opt
+            .setName("cmd")
+            .setDescription("Command (e.g. whitelist add Steve, op Steve, list)")
+            .setRequired(true)
+            .setMaxLength(256),
+        ),
     )
     .addSubcommand((sub) =>
       sub
@@ -119,6 +134,21 @@ export default {
         const health = await getMinecraftHealth();
         await interaction.editReply({
           embeds: [buildMinecraftStartEmbed(before, after, health)],
+        });
+        return;
+      }
+
+      if (sub === "command") {
+        const denied = requireStacyOwnerForMinecraftConsoleInteraction(interaction);
+        if (denied) {
+          await replyDenied(interaction, denied);
+          return;
+        }
+        await interaction.deferReply({ ephemeral: true });
+        const cmd = interaction.options.getString("cmd", true);
+        const output = await runMinecraftConsoleCommand(cmd);
+        await interaction.editReply({
+          embeds: [buildMinecraftCommandEmbed({ command: cmd.trim(), output })],
         });
         return;
       }

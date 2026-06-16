@@ -89,3 +89,49 @@ export function summarizeTotalCostReport(report: TotalCostReport): string {
     `(Activate credits ${usd(report.aws.creditsUsedUsd)}, OpenAI ${usd(report.openAi.totalCost)}).`
   );
 }
+
+const ALERT_COLOR = 0xed4245;
+
+export function buildBudgetAlertEmbed(params: {
+  creditsUsedUsd: number;
+  thresholdUsd: number;
+  windowDays: number;
+  periodStart: string;
+  periodEnd: string;
+  promoRemainingUsd: number | null;
+}): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(ALERT_COLOR)
+    .setTitle("AWS budget alert")
+    .setDescription(
+      `Activate credits used in the last **${params.windowDays} days** exceeded **${usd(params.thresholdUsd)}**.`,
+    )
+    .addFields(
+      {
+        name: "Credits used",
+        value: usd(params.creditsUsedUsd),
+        inline: true,
+      },
+      {
+        name: "Alert threshold",
+        value: `${usd(params.thresholdUsd)} / ${params.windowDays} days`,
+        inline: true,
+      },
+      {
+        name: "Period",
+        value: `${params.periodStart} → ${params.periodEnd}`,
+      },
+    )
+    .setFooter({ text: "AWS · Activate credits · Cost Explorer" })
+    .setTimestamp();
+
+  if (params.promoRemainingUsd != null) {
+    embed.addFields({
+      name: "Credits remaining (est.)",
+      value: usd(params.promoRemainingUsd),
+      inline: true,
+    });
+  }
+
+  return embed;
+}

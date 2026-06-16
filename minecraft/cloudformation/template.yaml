@@ -264,12 +264,14 @@ Resources:
               - Effect: Allow
                 Action:
                   - ssm:SendCommand
-                Resource:
-                  - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
-                  - !Sub "arn:aws:ssm:${AWS::Region}::document/AWS-RunShellScript"
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
                 Condition:
                   StringEquals:
-                    aws:ResourceTag/Project: !Ref ProjectName
+                    ec2:ResourceTag/Project: !Ref ProjectName
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                Resource: !Sub "arn:aws:ssm:${AWS::Region}::document/AWS-RunShellScript"
               - Effect: Allow
                 Action:
                   - ssm:GetCommandInvocation

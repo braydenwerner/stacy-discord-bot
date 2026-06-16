@@ -42,8 +42,11 @@ export function formatErrorForUser(error: unknown): string {
     if (/cloudwatch:|ce:GetCost|budgets:/i.test(raw)) {
       return "I can't read AWS usage data — the bot AWS account is missing billing permission.";
     }
+    if (/ssm:SendCommand/i.test(raw)) {
+      return "I can't run commands on the Minecraft server — the bot AWS user is missing SSM permission. An admin should run `pnpm run minecraft:update-bot-iam` with admin AWS credentials (not the bot keys in bot.env).";
+    }
     if (/ssm:/i.test(raw)) {
-      return "I can't run commands on the Minecraft server — the bot AWS account is missing SSM permission.";
+      return "I can't run commands on the Minecraft server — the bot AWS account is missing SSM permission. An admin should run `pnpm run minecraft:update-bot-iam`.";
     }
     return "That AWS operation isn't allowed for the bot account. Ask an admin to check IAM permissions.";
   }

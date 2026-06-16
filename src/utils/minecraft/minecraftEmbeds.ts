@@ -250,6 +250,26 @@ export function buildIdleOverdueEmbed(params: {
   return embed;
 }
 
+export function buildMinecraftCommandEmbed(params: {
+  command: string;
+  output: string;
+}): EmbedBuilder {
+  const output =
+    params.output.length > 1000
+      ? `${params.output.slice(0, 999)}…`
+      : params.output;
+
+  return new EmbedBuilder()
+    .setColor(COLORS.success)
+    .setTitle("Minecraft command")
+    .addFields(
+      { name: "Command", value: `\`${params.command}\`` },
+      { name: "Output", value: output || "(no output)" },
+    )
+    .setFooter({ text: "Minecraft · RCON" })
+    .setTimestamp();
+}
+
 export function buildMinecraftBackupsEmbed(
   bucket: string,
   backups: MinecraftBackup[],

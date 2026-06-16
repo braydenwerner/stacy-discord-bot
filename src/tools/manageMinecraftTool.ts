@@ -29,7 +29,8 @@ export const manageMinecraftTool = new DynamicStructuredTool({
     "Control or inspect the AWS Minecraft server. " +
     "Use start/wake/boot, stop/shut down, status (EC2 + port + service + players), " +
     "logs (recent Paper/system logs), backups (S3 archive list), or metrics (CPU, EBS IOPS/throughput, network, load/mem/disk). " +
-    "Anyone can start or inspect; stop requires Equality role, server admin, or bot owner.",
+    "Anyone can start or inspect; stop requires Equality role, server admin, or bot owner. " +
+    "Server console commands (whitelist, op, etc.) are only via /minecraft command — not this tool.",
   schema: z.object({
     action: z
       .enum(["start", "stop", "status", "logs", "backups", "metrics"])

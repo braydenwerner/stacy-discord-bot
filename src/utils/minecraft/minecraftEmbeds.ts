@@ -208,7 +208,7 @@ export function buildMinecraftBackupsEmbed(
     .setTitle("Minecraft S3 backups")
     .setURL(bucketUrl)
     .setDescription(`Bucket: [Open in AWS Console](${bucketUrl})\n\`${bucket}\``)
-    .setFooter({ text: "Minecraft · S3 archives" })
+    .setFooter({ text: "Minecraft · S3 backups" })
     .setTimestamp();
 
   if (backups.length === 0) {
@@ -232,7 +232,7 @@ export function buildMinecraftBackupsEmbed(
   });
 
   embed.addFields({
-    name: `Recent archives (${backups.length})`,
+    name: `Recent backups (${backups.length})`,
     value: lines.join("\n\n").slice(0, 1024),
   });
 

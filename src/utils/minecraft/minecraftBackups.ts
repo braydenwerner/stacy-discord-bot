@@ -8,9 +8,6 @@ import {
 /** Top-level S3 key prefix for world backup tarballs (e.g. data-20260605T180006Z.tar.gz). */
 export const MINECRAFT_BACKUP_KEY_PREFIX = "data-";
 
-/** Legacy path from before backups moved to bucket root. */
-const LEGACY_BACKUP_PREFIX = "archives/data-";
-
 export type BackupSource = "periodic" | "idle" | "stop" | "manual";
 
 export type MinecraftBackup = {
@@ -35,10 +32,8 @@ export function isMinecraftBackupConfigured(): boolean {
 }
 
 export function isMinecraftBackupKey(key: string): boolean {
-  if (!key.endsWith(".tar.gz") || key.startsWith("events/")) return false;
   return (
-    key.startsWith(MINECRAFT_BACKUP_KEY_PREFIX) ||
-    key.startsWith(LEGACY_BACKUP_PREFIX)
+    key.startsWith(MINECRAFT_BACKUP_KEY_PREFIX) && key.endsWith(".tar.gz")
   );
 }
 
@@ -60,12 +55,9 @@ export async function listMinecraftBackups(
     throw new Error("MINECRAFT_BACKUP_BUCKET is not set.");
   }
 
-  const [current, legacy] = await Promise.all([
-    listBackupObjects(bucket, MINECRAFT_BACKUP_KEY_PREFIX),
-    listBackupObjects(bucket, LEGACY_BACKUP_PREFIX),
-  ]);
+  const objects = await listBackupObjects(bucket, MINECRAFT_BACKUP_KEY_PREFIX);
 
-  const backups = [...current, ...legacy]
+  const backups = objects
     .filter((obj) => obj.Key && isMinecraftBackupKey(obj.Key))
     .map((obj) => ({
       key: obj.Key!,
@@ -83,7 +75,6 @@ export async function listMinecraftBackups(
 
 export function formatBackupStamp(key: string): string {
   return key
-    .replace(/^archives\//, "")
     .replace(/^data-/, "")
     .replace(/\.tar\.gz$/, "");
 }

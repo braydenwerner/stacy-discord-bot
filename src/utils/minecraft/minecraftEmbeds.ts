@@ -202,6 +202,54 @@ export function buildIdleShutdownEmbed(params: {
   return embed;
 }
 
+/** Warn when auto idle-shutdown should have stopped EC2 but did not. */
+export function buildIdleOverdueEmbed(params: {
+  emptyMinutes: number;
+  idleThresholdMinutes: number;
+  playerSummary: string | null;
+  connectAddress: string | null;
+}): EmbedBuilder {
+  const embed = new EmbedBuilder()
+    .setColor(COLORS.danger)
+    .setTitle("Idle shutdown overdue")
+    .setDescription(
+      "The server has been running with **no players** longer than the auto-shutdown threshold. " +
+        "Idle stop may have failed — EC2 is still billing (~$11/day on c6i.2xlarge). " +
+        "Use `/minecraft stop` if nobody is playing.",
+    )
+    .addFields(
+      {
+        name: "Empty for",
+        value: `${params.emptyMinutes} min`,
+        inline: true,
+      },
+      {
+        name: "Auto-stop threshold",
+        value: `${params.idleThresholdMinutes} min`,
+        inline: true,
+      },
+      {
+        name: "Players",
+        value: params.playerSummary ?? "0 online",
+      },
+    )
+    .setFooter({ text: "Minecraft · idle watchdog" })
+    .setTimestamp();
+
+  if (params.connectAddress) {
+    embed.addFields({
+      name: "Connect",
+      value: `\`${params.connectAddress}\``,
+      inline: true,
+    });
+  }
+
+  const ec2 = ec2ConsoleField();
+  if (ec2) embed.addFields(ec2);
+
+  return embed;
+}
+
 export function buildMinecraftBackupsEmbed(
   bucket: string,
   backups: MinecraftBackup[],

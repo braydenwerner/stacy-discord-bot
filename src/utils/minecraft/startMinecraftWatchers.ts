@@ -1,5 +1,6 @@
 import { startMinecraftBackupWatcher } from "@/utils/minecraft/minecraftBackupWatcher";
 import { startMinecraftEventWatcher } from "@/utils/minecraft/minecraftEventWatcher";
+import { startMinecraftIdleOverdueWatcher } from "@/utils/minecraft/minecraftIdleOverdueWatcher";
 import { startMinecraftInstanceWatcher } from "@/utils/minecraft/minecraftInstanceWatcher";
 import { getMinecraftNotifyChannelId } from "@/utils/minecraft/minecraftNotify";
 import type { Client } from "discord.js";
@@ -10,5 +11,6 @@ export function startMinecraftWatchers(client: Client): void {
   );
   startMinecraftInstanceWatcher(client);
   startMinecraftEventWatcher(client);
+  startMinecraftIdleOverdueWatcher(client);
   startMinecraftBackupWatcher(client);
 }

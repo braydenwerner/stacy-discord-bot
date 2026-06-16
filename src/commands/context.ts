@@ -1,9 +1,8 @@
 import {
   clearContextForUser,
-  formatClearContextReply,
 } from "@/utils/clearContext";
+import { buildClearContextEmbed } from "@/utils/actionEmbeds";
 import { replyError } from "@/utils/slashReply";
-import { truncateMessage } from "@/utils/truncateMessage";
 import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
@@ -26,7 +25,7 @@ export default {
       if (sub === "clear") {
         const removed = clearContextForUser(interaction.user.id);
         await interaction.reply({
-          content: truncateMessage(formatClearContextReply(removed)),
+          embeds: [buildClearContextEmbed(removed)],
           ephemeral: true,
         });
       }

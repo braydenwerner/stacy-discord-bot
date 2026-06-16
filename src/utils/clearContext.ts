@@ -1,5 +1,5 @@
 import { clearMessageHistory } from "@/db/messageHistory";
-import { truncateMessage } from "@/utils/truncateMessage";
+import { buildClearContextEmbed } from "@/utils/actionEmbeds";
 import type { Message } from "discord.js";
 
 /** Chat phrases that wipe SQLite history for the author (message must already mention STACY). */
@@ -26,5 +26,5 @@ export function formatClearContextReply(removed: number): string {
 
 export async function replyClearContext(message: Message): Promise<void> {
   const removed = clearContextForUser(message.author.id);
-  await message.reply(truncateMessage(formatClearContextReply(removed)));
+  await message.reply({ embeds: [buildClearContextEmbed(removed)] });
 }

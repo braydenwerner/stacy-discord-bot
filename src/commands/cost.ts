@@ -1,4 +1,4 @@
-import { formatTotalCostReport } from "@/utils/cost/formatTotalCostReport";
+import { buildTotalCostEmbed, summarizeTotalCostReport } from "@/utils/cost/costEmbeds";
 import { getTotalCostReport } from "@/utils/cost/totalCostReport";
 import { getAwsCredentialError } from "@/utils/aws/awsConfig";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
@@ -9,7 +9,7 @@ export default {
   data: new SlashCommandBuilder()
     .setName("cost")
     .setDescription(
-      "Total AWS + OpenAI spend breakdown with budget/credit remaining (Equality role)",
+      "Activate credits used + OpenAI spend breakdown (Equality role)",
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
@@ -28,7 +28,9 @@ export default {
     try {
       await interaction.deferReply({ ephemeral: true });
       const report = await getTotalCostReport();
-      await interaction.editReply(formatTotalCostReport(report));
+      await interaction.editReply({
+        embeds: [buildTotalCostEmbed(report)],
+      });
     } catch (error) {
       await replyError(interaction, error);
     }

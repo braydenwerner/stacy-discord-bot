@@ -1,7 +1,11 @@
 import { getDisplayNameForUserId } from "@/db/contacts";
 import { buildGroupsEmbed } from "@/utils/directoryEmbeds";
 import {
-  formatBulkGroupDiscordMessage,
+  ACTION_COLORS,
+  buildActionEmbed,
+  buildBulkGroupEmbed,
+} from "@/utils/actionEmbeds";
+import {
   resolveMemberHintsFromContext,
 } from "@/utils/bulkGroupMembers";
 import { parseMemberList } from "@/utils/parseMemberList";
@@ -124,11 +128,9 @@ export default {
           if (result.created) created = true;
         }
         await interaction.reply({
-          content: formatBulkGroupDiscordMessage(name, {
-            created,
-            resolved,
-            failed,
-          }),
+          embeds: [
+            buildBulkGroupEmbed(name, { created, resolved, failed }),
+          ],
           ephemeral: true,
         });
         return;
@@ -144,9 +146,16 @@ export default {
         );
         const label = getDisplayNameForUserId(interaction.guildId, user.id);
         await interaction.reply({
-          content: created
-            ? `Created **${name.trim()}** and added **${label}**.`
-            : `Added **${label}** to **${name.trim()}**.`,
+          embeds: [
+            buildActionEmbed({
+              title: created ? "Group created" : "Member added",
+              description: created
+                ? `Created **${name.trim()}** and added **${label}**.`
+                : `Added **${label}** to **${name.trim()}**.`,
+              color: ACTION_COLORS.success,
+              footer: "Groups · Equality",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -162,9 +171,16 @@ export default {
         );
         const label = getDisplayNameForUserId(interaction.guildId, user.id);
         await interaction.reply({
-          content: removed
-            ? `Removed **${label}** from **${name.trim()}**.`
-            : `**${label}** wasn't in **${name.trim()}** (or the group doesn't exist).`,
+          embeds: [
+            buildActionEmbed({
+              title: removed ? "Member removed" : "Not in group",
+              description: removed
+                ? `Removed **${label}** from **${name.trim()}**.`
+                : `**${label}** wasn't in **${name.trim()}** (or the group doesn't exist).`,
+              color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Groups · Equality",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -174,9 +190,16 @@ export default {
         const name = interaction.options.getString("name", true);
         const deleted = deleteGroup(interaction.guildId, name);
         await interaction.reply({
-          content: deleted
-            ? `Deleted group **${name.trim()}**.`
-            : `No group called **${name.trim()}** exists.`,
+          embeds: [
+            buildActionEmbed({
+              title: deleted ? "Group deleted" : "Group not found",
+              description: deleted
+                ? `Deleted group **${name.trim()}**.`
+                : `No group called **${name.trim()}** exists.`,
+              color: deleted ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Groups · Equality",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -210,7 +233,14 @@ export default {
         }
         await interaction.channel.send(result.content);
         await interaction.reply({
-          content: `Pinged **${name.trim()}**.`,
+          embeds: [
+            buildActionEmbed({
+              title: "Group pinged",
+              description: `Pinged **${name.trim()}** in this channel.`,
+              color: ACTION_COLORS.success,
+              footer: "Groups · Equality",
+            }),
+          ],
           ephemeral: true,
         });
       }

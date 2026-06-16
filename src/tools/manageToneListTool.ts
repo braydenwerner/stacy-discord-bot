@@ -7,6 +7,7 @@ import {
   buildNiceListEmbed,
   niceListSummaryForModel,
 } from "@/utils/directoryEmbeds";
+import { ACTION_COLORS, buildActionEmbed } from "@/utils/actionEmbeds";
 import { resolveGroupMemberId } from "@/utils/resolveGroupMember";
 import { requireStacyOwnerMessage } from "@/utils/stacyOwner";
 import { getToolMessage } from "@/utils/getToolMessage";
@@ -58,7 +59,16 @@ export const manageToneListTool = new DynamicStructuredTool({
       const text = added
         ? `Added <@${userId}> to the **nice** list.`
         : `<@${userId}> is already on the nice list.`;
-      await message.reply(text);
+      await message.reply({
+        embeds: [
+          buildActionEmbed({
+            title: added ? "Nice list updated" : "Already on nice list",
+            description: text,
+            color: added ? ACTION_COLORS.success : ACTION_COLORS.warning,
+            footer: "Tone · bot owner",
+          }),
+        ],
+      });
       return toolOk(text);
     }
 
@@ -66,7 +76,16 @@ export const manageToneListTool = new DynamicStructuredTool({
     const text = removed
       ? `Removed <@${userId}> from the nice list — they'll get the **snarky** tone.`
       : `<@${userId}> wasn't on the nice list.`;
-    await message.reply(text);
+    await message.reply({
+      embeds: [
+        buildActionEmbed({
+          title: removed ? "Nice list updated" : "Not on nice list",
+          description: text,
+          color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+          footer: "Tone · bot owner",
+        }),
+      ],
+    });
     return toolOk(text);
   },
 });

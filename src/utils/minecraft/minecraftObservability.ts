@@ -286,6 +286,17 @@ df -h / | awk 'NR==2 {print "DISK:" $3 "/" $2 " used (" $5 ")"}'
   }
 }
 
+/** Paper RCON list output, e.g. "There are 0 of a max of 5 players online." */
+export function parseMinecraftPlayerCount(
+  playerSummary: string | null,
+): number | null {
+  if (!playerSummary) return null;
+  const match = playerSummary.match(/There are (\d+) of/i);
+  if (!match) return null;
+  const count = Number.parseInt(match[1], 10);
+  return Number.isFinite(count) ? count : null;
+}
+
 export async function getMinecraftHealth(): Promise<MinecraftHealth> {
   const state = await getMinecraftServerState();
   const connectAddress = state.connectAddress;

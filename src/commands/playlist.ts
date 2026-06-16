@@ -14,6 +14,7 @@ import {
   buildPlaylistTracksEmbed,
   buildPlaylistsEmbed,
 } from "@/utils/directoryEmbeds";
+import { ACTION_COLORS, buildActionEmbed } from "@/utils/actionEmbeds";
 import {
   defaultTrackLabelFromTitle,
   resolveTrackAddFromInput,
@@ -166,7 +167,14 @@ export default {
         const name = interaction.options.getString("name", true);
         createPlaylist(userId, name);
         await interaction.reply({
-          content: `Created playlist **${name.trim()}**.`,
+          embeds: [
+            buildActionEmbed({
+              title: "Playlist created",
+              description: `Created playlist **${name.trim()}**.`,
+              color: ACTION_COLORS.success,
+              footer: "Playlists",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -176,9 +184,16 @@ export default {
         const name = interaction.options.getString("name", true);
         const deleted = deletePlaylist(userId, name);
         await interaction.reply({
-          content: deleted
-            ? `Deleted playlist **${name.trim()}**.`
-            : `You don't have a playlist named **${name.trim()}**.`,
+          embeds: [
+            buildActionEmbed({
+              title: deleted ? "Playlist deleted" : "Playlist not found",
+              description: deleted
+                ? `Deleted playlist **${name.trim()}**.`
+                : `You don't have a playlist named **${name.trim()}**.`,
+              color: deleted ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Playlists",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -189,9 +204,16 @@ export default {
         const newName = interaction.options.getString("new_name", true);
         const renamed = renamePlaylist(userId, name, newName);
         await interaction.reply({
-          content: renamed
-            ? `Renamed **${name.trim()}** → **${newName.trim()}**.`
-            : `You don't have a playlist named **${name.trim()}**.`,
+          embeds: [
+            buildActionEmbed({
+              title: renamed ? "Playlist renamed" : "Playlist not found",
+              description: renamed
+                ? `Renamed **${name.trim()}** → **${newName.trim()}**.`
+                : `You don't have a playlist named **${name.trim()}**.`,
+              color: renamed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Playlists",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -237,7 +259,14 @@ export default {
           url: resolved.url,
         });
         await interaction.reply({
-          content: `Added **${label}** to **${playlist.trim()}** — [${resolved.title}](${resolved.url})`,
+          embeds: [
+            buildActionEmbed({
+              title: "Track added",
+              description: `Added **${label}** to **${playlist.trim()}** — [${resolved.title}](${resolved.url})`,
+              color: ACTION_COLORS.success,
+              footer: "Playlists",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -248,9 +277,16 @@ export default {
         const track = interaction.options.getString("track", true);
         const removed = removeTrackFromPlaylist(userId, playlist, track);
         await interaction.reply({
-          content: removed
-            ? `Removed **${track.trim()}** from **${playlist.trim()}**.`
-            : `**${track.trim()}** isn't on **${playlist.trim()}**.`,
+          embeds: [
+            buildActionEmbed({
+              title: removed ? "Track removed" : "Track not found",
+              description: removed
+                ? `Removed **${track.trim()}** from **${playlist.trim()}**.`
+                : `**${track.trim()}** isn't on **${playlist.trim()}**.`,
+              color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Playlists",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -282,9 +318,16 @@ export default {
           url: url ?? undefined,
         });
         await interaction.reply({
-          content: updated
-            ? `Updated **${track.trim()}** on **${playlist.trim()}**.`
-            : `**${track.trim()}** isn't on **${playlist.trim()}**.`,
+          embeds: [
+            buildActionEmbed({
+              title: updated ? "Track updated" : "Track not found",
+              description: updated
+                ? `Updated **${track.trim()}** on **${playlist.trim()}**.`
+                : `**${track.trim()}** isn't on **${playlist.trim()}**.`,
+              color: updated ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Playlists",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -299,9 +342,16 @@ export default {
 
         if (!track) {
           await interaction.reply({
-            content: trackLabel?.trim()
-              ? `**${trackLabel.trim()}** isn't on **${playlist.trim()}**.`
-              : `**${playlist.trim()}** is empty or doesn't exist.`,
+            embeds: [
+              buildActionEmbed({
+                title: "Can't play",
+                description: trackLabel?.trim()
+                  ? `**${trackLabel.trim()}** isn't on **${playlist.trim()}**.`
+                  : `**${playlist.trim()}** is empty or doesn't exist.`,
+                color: ACTION_COLORS.warning,
+                footer: "Playlists",
+              }),
+            ],
             ephemeral: true,
           });
           return;
@@ -329,9 +379,14 @@ export default {
 
         if (ok) {
           await interaction.editReply({
-            content: truncateMessage(
-              `Playing **${track.name}** from **${playlist.trim()}**.`,
-            ),
+            embeds: [
+              buildActionEmbed({
+                title: "Now playing",
+                description: `Playing **${track.name}** from **${playlist.trim()}**.`,
+                color: ACTION_COLORS.success,
+                footer: "Playlists",
+              }),
+            ],
           });
         }
       }

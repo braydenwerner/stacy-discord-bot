@@ -4,6 +4,7 @@ import {
   removeMemberFromGroup,
 } from "@/db/userGroups";
 import { getDisplayNameForUserId } from "@/db/contacts";
+import { ACTION_COLORS, buildActionEmbed } from "@/utils/actionEmbeds";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { resolveGroupMemberId } from "@/utils/resolveGroupMember";
@@ -41,7 +42,16 @@ export const manageUserGroupTool = new DynamicStructuredTool({
         const text = deleted
           ? `Deleted group **${group}**.`
           : `No group called **${group}** exists.`;
-        await message.reply(text);
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: deleted ? "Group deleted" : "Group not found",
+              description: text,
+              color: deleted ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Groups · Equality",
+            }),
+          ],
+        });
         return deleted
           ? toolOk(`Deleted group "${group}".`)
           : toolError(`No group called "${group}" exists.`);
@@ -61,7 +71,16 @@ export const manageUserGroupTool = new DynamicStructuredTool({
         const text = created
           ? `Created **${group}** and added **${label}**.`
           : `Added **${label}** to **${group}**.`;
-        await message.reply(text);
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: created ? "Group created" : "Member added",
+              description: text,
+              color: ACTION_COLORS.success,
+              footer: "Groups · Equality",
+            }),
+          ],
+        });
         return toolOk(
           created
             ? `Created "${group}" and added ${label}.`
@@ -73,7 +92,16 @@ export const manageUserGroupTool = new DynamicStructuredTool({
       const text = removed
         ? `Removed **${label}** from **${group}**.`
         : `**${label}** wasn't in **${group}** (or the group doesn't exist).`;
-      await message.reply(text);
+      await message.reply({
+        embeds: [
+          buildActionEmbed({
+            title: removed ? "Member removed" : "Not in group",
+            description: text,
+            color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+            footer: "Groups · Equality",
+          }),
+        ],
+      });
       return removed
         ? toolOk(`Removed ${label} from "${group}".`)
         : toolError(

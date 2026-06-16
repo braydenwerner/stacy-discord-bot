@@ -1,4 +1,4 @@
-import { formatTotalCostReport } from "@/utils/cost/formatTotalCostReport";
+import { buildTotalCostEmbed, summarizeTotalCostReport } from "@/utils/cost/costEmbeds";
 import { getTotalCostReport } from "@/utils/cost/totalCostReport";
 import { getAwsCredentialError } from "@/utils/aws/awsConfig";
 import { requireEquality } from "@/utils/equalityRole";
@@ -11,8 +11,8 @@ import { z } from "zod";
 export const totalCostTool = new DynamicStructuredTool({
   name: "totalCost",
   description:
-    "Get total infrastructure cost: AWS spend breakdown (by service) plus OpenAI/Stacy " +
-    "API cost (lifetime estimated from token usage), combined total, credits, and budget remaining. " +
+    "Get total infrastructure cost: Activate credits used (by service) plus OpenAI/Stacy " +
+    "API cost (lifetime estimated from token usage), combined total, and estimated credits remaining. " +
     "Requires Equality role or admin.",
   schema: z.object({}),
   func: async (_input, _runManager, config) => {
@@ -32,9 +32,9 @@ export const totalCostTool = new DynamicStructuredTool({
 
     try {
       const report = await getTotalCostReport();
-      const text = formatTotalCostReport(report);
-      await message.reply(truncateMessage(text));
-      return toolOk(text);
+      const embed = buildTotalCostEmbed(report);
+      await message.reply({ embeds: [embed] });
+      return toolOk(summarizeTotalCostReport(report));
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);
       await message.reply(truncateMessage(`Cost lookup failed. ${text}`));

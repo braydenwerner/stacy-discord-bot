@@ -3,6 +3,7 @@ import {
   removeContact,
   updateContact,
 } from "@/db/contacts";
+import { ACTION_COLORS, buildActionEmbed } from "@/utils/actionEmbeds";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { DynamicStructuredTool } from "@langchain/core/tools";
@@ -50,7 +51,16 @@ export const manageContactTool = new DynamicStructuredTool({
           return "";
         }
         addContact(message.guildId, name, userId);
-        await message.reply(`Added **${name.trim()}** with ID \`${userId.trim()}\`.`);
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: "Contact added",
+              description: `Added **${name.trim()}** with ID \`${userId.trim()}\`.`,
+              color: ACTION_COLORS.success,
+              footer: "Contacts · Equality",
+            }),
+          ],
+        });
         return "";
       }
 
@@ -60,11 +70,18 @@ export const manageContactTool = new DynamicStructuredTool({
           return "";
         }
         const removed = removeContact(message.guildId, name);
-        await message.reply(
-          removed
-            ? `Removed contact **${name.trim()}**.`
-            : `No contact named **${name.trim()}** exists.`,
-        );
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: removed ? "Contact removed" : "Contact not found",
+              description: removed
+                ? `Removed contact **${name.trim()}**.`
+                : `No contact named **${name.trim()}** exists.`,
+              color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Contacts · Equality",
+            }),
+          ],
+        });
         return "";
       }
 
@@ -76,11 +93,18 @@ export const manageContactTool = new DynamicStructuredTool({
         newName,
         newUserId: userId,
       });
-      await message.reply(
-        updated
-          ? `Updated contact **${name.trim()}**.`
-          : `No contact named **${name.trim()}** exists.`,
-      );
+      await message.reply({
+        embeds: [
+          buildActionEmbed({
+            title: updated ? "Contact updated" : "Contact not found",
+            description: updated
+              ? `Updated contact **${name.trim()}**.`
+              : `No contact named **${name.trim()}** exists.`,
+            color: updated ? ACTION_COLORS.success : ACTION_COLORS.warning,
+            footer: "Contacts · Equality",
+          }),
+        ],
+      });
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);
       await message.reply(text);

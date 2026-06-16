@@ -20,6 +20,7 @@ const BOT_ENV_KEYS = [
   "MINECRAFT_BACKUP_BUCKET",
   "MINECRAFT_SSH_KEY_PATH",
   "MINECRAFT_NOTIFY_CHANNEL_ID",
+  "MINECRAFT_IDLE_SHUTDOWN_MINUTES",
   "AWS_BUDGET_NAME",
   "AWS_MONTHLY_BUDGET_USD",
   "AWS_PROMO_CREDIT_USD",
@@ -102,6 +103,14 @@ export function getMinecraftConfigError(): string | null {
 
 export function isMinecraftConfigured(): boolean {
   return getMinecraftConfigError() === null;
+}
+
+/** Must match IdleShutdownMinutes on the EC2 host (default 30). */
+export function minecraftIdleShutdownMinutes(): number {
+  const raw = process.env.MINECRAFT_IDLE_SHUTDOWN_MINUTES?.trim();
+  if (!raw) return 30;
+  const value = Number.parseInt(raw, 10);
+  return Number.isFinite(value) && value > 0 ? value : 30;
 }
 
 export function logMinecraftConfigStatus(): void {

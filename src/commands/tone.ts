@@ -3,10 +3,9 @@ import {
   listNiceListUserIds,
   removeFromNiceList,
 } from "@/db/niceList";
+import { ACTION_COLORS, buildActionEmbed } from "@/utils/actionEmbeds";
 import { buildNiceListEmbed } from "@/utils/directoryEmbeds";
-import {
-  requireStacyOwnerInteraction,
-} from "@/utils/stacyOwner";
+import { requireStacyOwnerInteraction } from "@/utils/stacyOwner";
 import { replyDenied, replyError } from "@/utils/slashReply";
 import {
   ChatInputCommandInteraction,
@@ -78,9 +77,16 @@ export default {
       if (sub === "nice-add") {
         const added = addToNiceList(user.id);
         await interaction.reply({
-          content: added
-            ? `Added <@${user.id}> to the **nice** list.`
-            : `<@${user.id}> is already on the nice list.`,
+          embeds: [
+            buildActionEmbed({
+              title: added ? "Nice list updated" : "Already on nice list",
+              description: added
+                ? `Added <@${user.id}> to the **nice** list.`
+                : `<@${user.id}> is already on the nice list.`,
+              color: added ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Tone · bot owner",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -88,9 +94,16 @@ export default {
 
       const removed = removeFromNiceList(user.id);
       await interaction.reply({
-        content: removed
-          ? `Removed <@${user.id}> from the nice list — they'll get the **snarky** tone.`
-          : `<@${user.id}> wasn't on the nice list.`,
+        embeds: [
+          buildActionEmbed({
+            title: removed ? "Nice list updated" : "Not on nice list",
+            description: removed
+              ? `Removed <@${user.id}> from the nice list — they'll get the **snarky** tone.`
+              : `<@${user.id}> wasn't on the nice list.`,
+            color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+            footer: "Tone · bot owner",
+          }),
+        ],
         ephemeral: true,
       });
     } catch (error) {

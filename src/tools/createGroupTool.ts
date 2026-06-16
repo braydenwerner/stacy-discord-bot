@@ -1,8 +1,8 @@
 import {
   addMembersToGroup,
-  formatBulkGroupDiscordMessage,
   formatBulkGroupToolResult,
 } from "@/utils/bulkGroupMembers";
+import { buildBulkGroupEmbed } from "@/utils/actionEmbeds";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
 import { toolError } from "@/utils/toolResult";
@@ -47,8 +47,7 @@ export const createGroupTool = new DynamicStructuredTool({
 
     try {
       const outcome = addMembersToGroup(message, group, members);
-      const discordText = formatBulkGroupDiscordMessage(group, outcome);
-      await message.reply(discordText);
+      await message.reply({ embeds: [buildBulkGroupEmbed(group, outcome)] });
       return formatBulkGroupToolResult(group, outcome);
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);

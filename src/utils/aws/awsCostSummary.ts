@@ -5,13 +5,7 @@ import {
   type Group,
 } from "@aws-sdk/client-cost-explorer";
 import {
-  BudgetsClient,
-  DescribeBudgetCommand,
-} from "@aws-sdk/client-budgets";
-import { GetCallerIdentityCommand, STSClient } from "@aws-sdk/client-sts";
-import {
   AWS_BILLING_REGION,
-  awsBudgetName,
   promoCreditPoolUsd,
 } from "@/utils/aws/awsConfig";
 
@@ -20,19 +14,11 @@ export type AwsServiceSpend = {
   amountUsd: number;
 };
 
-export type AwsBudgetSnapshot = {
-  name: string;
-  limitUsd: number;
-  spentUsd: number;
-  remainingUsd: number;
-  period: string;
-};
-
 export type AwsCostSummary = {
-  totalUsd: number;
-  creditsUsd: number;
+  /** Activate/promo credits consumed in the billing window (always ≥ 0). */
+  creditsUsedUsd: number;
+  /** Usage by service that credits paid for (gross usage, excludes credit line items). */
   services: AwsServiceSpend[];
-  budget: AwsBudgetSnapshot | null;
   promoCreditRemainingUsd: number | null;
   periodStart: string;
   periodEnd: string;
@@ -82,33 +68,14 @@ function costExplorer(): CostExplorerClient {
   return new CostExplorerClient({ region: AWS_BILLING_REGION });
 }
 
-function budgetsClient(): BudgetsClient {
-  return new BudgetsClient({ region: AWS_BILLING_REGION });
-}
-
-let cachedAccountId: string | null | undefined;
-
-async function getAwsAccountId(): Promise<string | null> {
-  const fromEnv = process.env.AWS_ACCOUNT_ID?.trim();
-  if (fromEnv) return fromEnv;
-  if (cachedAccountId !== undefined) return cachedAccountId;
-
-  try {
-    const region = process.env.AWS_REGION ?? AWS_BILLING_REGION;
-    const output = await new STSClient({ region }).send(
-      new GetCallerIdentityCommand({}),
-    );
-    cachedAccountId = output.Account ?? null;
-  } catch {
-    cachedAccountId = null;
-  }
-  return cachedAccountId;
-}
-
 async function fetchCost(
   start: string,
   end: string,
-  options?: { groupByService?: boolean; creditOnly?: boolean },
+  options?: {
+    groupByService?: boolean;
+    creditOnly?: boolean;
+    usageOnly?: boolean;
+  },
 ): Promise<{ total: number; services: AwsServiceSpend[] }> {
   const output = await costExplorer().send(
     new GetCostAndUsageCommand({
@@ -124,7 +91,18 @@ async function fetchCost(
               Dimensions: { Key: "RECORD_TYPE", Values: ["Credit"] },
             },
           }
-        : {}),
+        : options?.usageOnly
+          ? {
+              Filter: {
+                Not: {
+                  Dimensions: {
+                    Key: "RECORD_TYPE",
+                    Values: ["Credit", "Refund", "Tax"],
+                  },
+                },
+              },
+            }
+          : {}),
     }),
   );
 
@@ -146,60 +124,27 @@ async function fetchCost(
   return { total: sumUnblendedCost(output), services: [] };
 }
 
-async function fetchAwsBudget(): Promise<AwsBudgetSnapshot | null> {
-  const name = awsBudgetName();
-  if (!name) return null;
-
-  const accountId = await getAwsAccountId();
-  if (!accountId) return null;
-
-  const output = await budgetsClient().send(
-    new DescribeBudgetCommand({
-      AccountId: accountId,
-      BudgetName: name,
-    }),
-  );
-
-  const budget = output.Budget;
-  if (!budget) return null;
-
-  const limitUsd = Number.parseFloat(budget.BudgetLimit?.Amount ?? "0");
-  const spentUsd = Number.parseFloat(
-    budget.CalculatedSpend?.ActualSpend?.Amount ?? "0",
-  );
-  if (!Number.isFinite(limitUsd) || limitUsd <= 0) return null;
-
-  return {
-    name,
-    limitUsd,
-    spentUsd,
-    remainingUsd: limitUsd - spentUsd,
-    period: budget.TimeUnit ?? "MONTHLY",
-  };
-}
-
-/** AWS spend for the configured billing window (default trailing 12 months). */
+/** AWS Activate credits used in the configured billing window (default trailing 12 months). */
 export async function getAwsCostSummary(): Promise<AwsCostSummary> {
   const now = new Date();
   const periodStart = billingPeriodStart(now);
   const periodEnd = isoDate(now);
   const nextDay = isoDate(addUtcDays(now, 1));
 
-  const [total, credits, budget] = await Promise.all([
-    fetchCost(periodStart, nextDay, { groupByService: true }),
+  const [usage, credits] = await Promise.all([
+    fetchCost(periodStart, nextDay, { groupByService: true, usageOnly: true }),
     fetchCost(periodStart, nextDay, { creditOnly: true }),
-    fetchAwsBudget(),
   ]);
 
+  // Cost Explorer reports credits as negative amounts.
+  const creditsUsedUsd = Math.abs(Math.min(0, credits.total));
   const promoPool = promoCreditPoolUsd();
   const promoRemaining =
-    promoPool != null ? promoPool - total.total : null;
+    promoPool != null ? promoPool - creditsUsedUsd : null;
 
   return {
-    totalUsd: total.total,
-    creditsUsd: credits.total,
-    services: total.services,
-    budget,
+    creditsUsedUsd,
+    services: usage.services,
     promoCreditRemainingUsd: promoRemaining,
     periodStart,
     periodEnd,

@@ -14,6 +14,7 @@ import {
   playlistTracksSummaryForModel,
   playlistsSummaryForModel,
 } from "@/utils/directoryEmbeds";
+import { ACTION_COLORS, buildActionEmbed } from "@/utils/actionEmbeds";
 import { getToolMessage } from "@/utils/getToolMessage";
 import {
   defaultTrackLabelFromTitle,
@@ -103,7 +104,17 @@ export const managePlaylistsTool = new DynamicStructuredTool({
           return toolError(text);
         }
         createPlaylist(userId, playlist);
-        await message.reply(`Created playlist **${playlist.trim()}**.`);
+        const text = `Created playlist **${playlist.trim()}**.`;
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: "Playlist created",
+              description: text,
+              color: ACTION_COLORS.success,
+              footer: "Playlists",
+            }),
+          ],
+        });
         return toolOk(`Created playlist "${playlist.trim()}".`);
       }
 
@@ -117,7 +128,16 @@ export const managePlaylistsTool = new DynamicStructuredTool({
         const text = deleted
           ? `Deleted playlist **${playlist.trim()}**.`
           : `You don't have a playlist named **${playlist.trim()}**.`;
-        await message.reply(text);
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: deleted ? "Playlist deleted" : "Playlist not found",
+              description: text,
+              color: deleted ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Playlists",
+            }),
+          ],
+        });
         return deleted ? toolOk(text) : toolError(text);
       }
 
@@ -131,7 +151,16 @@ export const managePlaylistsTool = new DynamicStructuredTool({
         const text = renamed
           ? `Renamed playlist **${playlist.trim()}** → **${newPlaylistName.trim()}**.`
           : `You don't have a playlist named **${playlist.trim()}**.`;
-        await message.reply(text);
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: renamed ? "Playlist renamed" : "Playlist not found",
+              description: text,
+              color: renamed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Playlists",
+            }),
+          ],
+        });
         return renamed ? toolOk(text) : toolError(text);
       }
 
@@ -166,9 +195,16 @@ export const managePlaylistsTool = new DynamicStructuredTool({
           artist: resolved.artist,
           url: resolved.url,
         });
-        await message.reply(
-          `Added **${label}** to **${playlist.trim()}** — [${resolved.title}](${resolved.url})`,
-        );
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: "Track added",
+              description: `Added **${label}** to **${playlist.trim()}** — [${resolved.title}](${resolved.url})`,
+              color: ACTION_COLORS.success,
+              footer: "Playlists",
+            }),
+          ],
+        });
         return toolOk(
           `Added "${label}" to playlist "${playlist.trim()}" with URL.`,
         );
@@ -185,7 +221,16 @@ export const managePlaylistsTool = new DynamicStructuredTool({
         const text = removed
           ? `Removed **${trackName.trim()}** from **${playlist.trim()}**.`
           : `**${trackName.trim()}** isn't on **${playlist.trim()}**.`;
-        await message.reply(text);
+        await message.reply({
+          embeds: [
+            buildActionEmbed({
+              title: removed ? "Track removed" : "Track not found",
+              description: text,
+              color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Playlists",
+            }),
+          ],
+        });
         return removed ? toolOk(text) : toolError(text);
       }
 
@@ -198,7 +243,16 @@ export const managePlaylistsTool = new DynamicStructuredTool({
       const text = updated
         ? `Updated **${trackName.trim()}** on **${playlist.trim()}**.`
         : `**${trackName.trim()}** isn't on **${playlist.trim()}**.`;
-      await message.reply(text);
+      await message.reply({
+        embeds: [
+          buildActionEmbed({
+            title: updated ? "Track updated" : "Track not found",
+            description: text,
+            color: updated ? ACTION_COLORS.success : ACTION_COLORS.warning,
+            footer: "Playlists",
+          }),
+        ],
+      });
       return updated ? toolOk(text) : toolError(text);
     } catch (error) {
       const text = error instanceof Error ? error.message : String(error);

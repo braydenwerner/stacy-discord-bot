@@ -20,6 +20,6 @@ export async function getTotalCostReport(): Promise<TotalCostReport> {
   return {
     aws,
     openAi,
-    combinedTotalUsd: aws.totalUsd + openAi.totalCost,
+    combinedTotalUsd: aws.creditsUsedUsd + openAi.totalCost,
   };
 }

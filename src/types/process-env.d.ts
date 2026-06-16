@@ -31,6 +31,8 @@ declare global {
       MINECRAFT_NOTIFY_CHANNEL_ID?: string;
       /** S3 bucket for world backups (backup watcher) */
       MINECRAFT_BACKUP_BUCKET?: string;
+      /** Idle auto-shutdown threshold in minutes (must match EC2 host; default 30) */
+      MINECRAFT_IDLE_SHUTDOWN_MINUTES?: string;
       /** Optional SSH key for EC2 logs/health when SSM is unavailable */
       MINECRAFT_SSH_KEY_PATH?: string;
       /** AWS Budget name for /cost remaining-budget display */

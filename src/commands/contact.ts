@@ -4,6 +4,7 @@ import {
   removeContact,
   updateContact,
 } from "@/db/contacts";
+import { ACTION_COLORS, buildActionEmbed } from "@/utils/actionEmbeds";
 import { buildContactsEmbed } from "@/utils/directoryEmbeds";
 import { requireEqualityInteraction } from "@/utils/equalityRole";
 import { replyDenied, replyError } from "@/utils/slashReply";
@@ -77,7 +78,14 @@ export default {
         const user = interaction.options.getUser("user", true);
         addContact(interaction.guildId, name, user.id);
         await interaction.reply({
-          content: `Added **${name.trim()}** as <@${user.id}>.`,
+          embeds: [
+            buildActionEmbed({
+              title: "Contact added",
+              description: `Added **${name.trim()}** as <@${user.id}>.`,
+              color: ACTION_COLORS.success,
+              footer: "Contacts · Equality",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -87,9 +95,16 @@ export default {
         const name = interaction.options.getString("name", true);
         const removed = removeContact(interaction.guildId, name);
         await interaction.reply({
-          content: removed
-            ? `Removed contact **${name.trim()}**.`
-            : `No contact named **${name.trim()}** exists.`,
+          embeds: [
+            buildActionEmbed({
+              title: removed ? "Contact removed" : "Contact not found",
+              description: removed
+                ? `Removed contact **${name.trim()}**.`
+                : `No contact named **${name.trim()}** exists.`,
+              color: removed ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Contacts · Equality",
+            }),
+          ],
           ephemeral: true,
         });
         return;
@@ -111,9 +126,16 @@ export default {
           newUserId: user?.id,
         });
         await interaction.reply({
-          content: updated
-            ? `Updated contact **${name.trim()}**.`
-            : `No contact named **${name.trim()}** exists.`,
+          embeds: [
+            buildActionEmbed({
+              title: updated ? "Contact updated" : "Contact not found",
+              description: updated
+                ? `Updated contact **${name.trim()}**.`
+                : `No contact named **${name.trim()}** exists.`,
+              color: updated ? ACTION_COLORS.success : ACTION_COLORS.warning,
+              footer: "Contacts · Equality",
+            }),
+          ],
           ephemeral: true,
         });
         return;

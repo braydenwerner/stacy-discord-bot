@@ -244,7 +244,10 @@ Resources:
                 Action:
                   - ec2:StartInstances
                   - ec2:StopInstances
-                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${McInstance}"
+                Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
+                Condition:
+                  StringEquals:
+                    ec2:ResourceTag/Project: !Ref ProjectName
               - Effect: Allow
                 Action:
                   - ec2:DescribeInstances
@@ -259,8 +262,11 @@ Resources:
                 Action:
                   - ssm:SendCommand
                 Resource:
-                  - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/${McInstance}"
+                  - !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:instance/*"
                   - !Sub "arn:aws:ssm:${AWS::Region}::document/AWS-RunShellScript"
+                Condition:
+                  StringEquals:
+                    aws:ResourceTag/Project: !Ref ProjectName
               - Effect: Allow
                 Action:
                   - ssm:GetCommandInvocation

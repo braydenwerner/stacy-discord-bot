@@ -49,6 +49,7 @@
     "deployCommands": "tsx src/scripts/deployCommands.ts",
     "minecraft:fetch-env": "tsx src/scripts/fetchMinecraftStackEnv.ts",
     "minecraft:create-budget": "bash minecraft/create-budget.sh",
+    "minecraft:update-bot-iam": "bash minecraft/update-bot-iam.sh",
     "deploy": "pnpm run build && pm2 delete all || true && pm2 start dist/index.js --attach"
   }
 }

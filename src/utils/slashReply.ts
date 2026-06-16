@@ -1,4 +1,5 @@
 import type { ChatInputCommandInteraction } from "discord.js";
+import { formatError, formatErrorForUser } from "@/utils/formatError";
 
 export async function replyDenied(
   interaction: ChatInputCommandInteraction,
@@ -15,6 +16,6 @@ export async function replyError(
   interaction: ChatInputCommandInteraction,
   error: unknown,
 ): Promise<void> {
-  const text = error instanceof Error ? error.message : String(error);
-  await replyDenied(interaction, text);
+  console.error("[slash]", formatError(error));
+  await replyDenied(interaction, formatErrorForUser(error));
 }

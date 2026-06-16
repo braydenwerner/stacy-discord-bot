@@ -42,6 +42,14 @@ Stacy polls S3 every 2 minutes for new backups and idle-shutdown events, and EC2
 
 **Observability** (via `/minecraft` or `manageMinecraft`): `health`, `logs`, `backups`, `metrics`. Metrics use CloudWatch (CPU, EBS IOPS/throughput, network) plus SSM for load/memory/disk on the instance. Redeploy the CloudFormation stack (or update the bot IAM user) for `cloudwatch:GetMetricData`, `ec2:DescribeVolumes`, and SSM permissions.
 
+If `/minecraft start` fails with an IAM access error, the bot user policy may still reference an old instance ID. Redeploy the stack **or** run (with **admin** AWS credentials, not the bot user):
+
+```bash
+pnpm run minecraft:update-bot-iam
+```
+
+That applies a tag-based policy (`Project=stacy-mc`) so start/stop works after instance replacement.
+
 Edit `server/` scripts, then re-run `./deploy.sh`.
 
 ## Destroy

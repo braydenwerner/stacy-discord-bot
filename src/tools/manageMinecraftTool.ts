@@ -15,6 +15,7 @@ import { getMinecraftBackupReport } from "@/utils/minecraft/minecraftObservabili
 import { runMinecraftObserve } from "@/utils/minecraft/runMinecraftObserve";
 import { requireEquality } from "@/utils/equalityRole";
 import { getToolMessage } from "@/utils/getToolMessage";
+import { formatError, formatErrorForUser } from "@/utils/formatError";
 import { toolError, toolOk } from "@/utils/toolResult";
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
@@ -108,7 +109,8 @@ export const manageMinecraftTool = new DynamicStructuredTool({
       await message.reply(text);
       return toolOk(text);
     } catch (error) {
-      const text = error instanceof Error ? error.message : String(error);
+      console.error("[manageMinecraft]", formatError(error));
+      const text = formatErrorForUser(error);
       await message.reply(`Minecraft command failed. ${text}`);
       return toolError(text);
     }

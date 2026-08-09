@@ -10,6 +10,7 @@ Group=minecraft
 WorkingDirectory=/opt/minecraft/server
 EnvironmentFile=-/etc/sysconfig/minecraft-idle
 
+ExecStartPre=+/bin/rm -f /var/lib/minecraft-idle/idle_since
 ExecStartPre=/opt/minecraft/scripts/apply-paper-tuning.sh
 ExecStart=/usr/bin/java @/opt/minecraft/jvm-flags.conf -jar server.jar nogui
 ExecStop=/opt/minecraft/scripts/stop-server.sh

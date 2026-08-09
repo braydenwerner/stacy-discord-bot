@@ -69,7 +69,7 @@
   },
   {
     "ParameterKey": "McVersion",
-    "ParameterValue": "26.1.2"
+    "ParameterValue": "26.2"
   },
   {
     "ParameterKey": "JvmMaxMemory",

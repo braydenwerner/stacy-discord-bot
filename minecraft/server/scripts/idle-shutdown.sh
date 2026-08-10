@@ -11,7 +11,7 @@ STATE_FILE="/var/lib/minecraft-idle/idle_since"
 LOG_FILE="/var/log/minecraft-idle.log"
 
 log() {
-  echo "$(date -Is) $*" | tee -a "${LOG_FILE}"
+  echo "$(date -Is) $*" | tee -a "${LOG_FILE}" >/dev/null
 }
 
 mkdir -p "$(dirname "${STATE_FILE}")"

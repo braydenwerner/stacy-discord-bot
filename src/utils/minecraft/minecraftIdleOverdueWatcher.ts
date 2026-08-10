@@ -53,7 +53,10 @@ async function pollIdleOverdue(client: Client): Promise<void> {
 
     const health = await getMinecraftHealth();
     if (health.portOpen !== true) {
-      // Still booting or MC not listening — do not start the empty timer yet.
+      // Still booting or MC not listening — any prior empty-tracking is no
+      // longer continuous, so don't let a stale timestamp resume once the
+      // port reopens.
+      clearIdleWatchState();
       return;
     }
 
@@ -105,6 +108,11 @@ async function pollIdleOverdue(client: Client): Promise<void> {
 export function startMinecraftIdleOverdueWatcher(client: Client): void {
   if (!isMinecraftConfigured()) return;
   if (timer) return;
+
+  // idle_empty_since/idle_overdue_notified_at persist in the DB across bot
+  // restarts, but nothing was observed while this process was down — start
+  // from a clean slate rather than trusting a stale timestamp.
+  clearIdleWatchState();
 
   void pollIdleOverdue(client);
   timer = setInterval(() => {
